@@ -25,8 +25,8 @@ About the OA / 关于公众号
 ## 3. Data Flow
 
 1.  **Authentication:**
-    - The script first obtains an `access_token` using `APPID` and `APPSECRET` from WeChat's API. Credentials are provided via environment variables (for CI) or `.env` file (for local use).
-    - 脚本首先使用微信 API 中的 `APPID` 和 `APPSECRET` 获取 `access_token`。凭据通过环境变量（用于 CI）或 `.env` 文件（用于本地）提供。
+    - The script first obtains an `access_token` using `APPID` and `APPSECRET` from WeChat's API. Credentials are provided via command-line arguments or `env.json` (local), and via environment variables/Secrets (for CI).
+    - 脚本首先使用微信 API 中的 `APPID` 和 `APPSECRET` 获取 `access_token`。凭据通过命令行参数或根目录 `env.json`（本地），以及环境变量/Secrets（CI）提供。
     - The `access_token` has a limited validity period (approx. 7200 seconds) and is managed per script run.
     - `access_token` 有效期有限（约 7200 秒），在每次脚本运行时重新获取和管理。
 

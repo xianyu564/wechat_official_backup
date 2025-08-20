@@ -39,13 +39,14 @@ requirements.txt
 - 若同名冲突，将自动生成 `YYYY-MM-DD 标题 (2).md`、`(3).md` 等。
 
 ### 快速开始 · 凭据配置（本地）/ Quick Start · Credentials (Local)
-1) 在仓库根目录新建 `.env`（已被 `.gitignore` 忽略，不会入库）：
-```dotenv
-WECHAT_APPID=YOUR_APPID_HERE
-WECHAT_APPSECRET=YOUR_APPSECRET_HERE
-WECHAT_ACCOUNT_NAME=文不加点的张衔瑜
+1) 在仓库根目录新建 `env.json`（已被 `.gitignore` 忽略，不会入库），可参考 `env.json.example`：
+```json
+{
+  "WECHAT_APPID": "YOUR_APPID_HERE",
+  "WECHAT_APPSECRET": "YOUR_APPSECRET_HERE",
+  "WECHAT_ACCOUNT_NAME": "文不加点的张衔瑜"
+}
 ```
-可参照现有init.env执行
 
 2) 安装依赖：
 ```bash
@@ -53,17 +54,19 @@ pip install -r requirements.txt
 ```
 
 ### 本地运行 / Local Usage
-两种方式（二选一）：
-- 使用命令行参数（优先级更高）
-```bash
-python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET> --account-name "文不加点的张衔瑜"
-```
-- 使用 `.env`（已配置时可直接）：
+运行方式：
+- 直接运行（默认从根目录 `env.json` 读取凭据）：
 ```bash
 python scripts/backup_wechat.py
 ```
+- 或使用命令行参数（优先级更高，覆盖 `env.json` 值）：
+```bash
+python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET> --account-name "文不加点的张衔瑜"
+```
 - **时间范围备份：** 支持 `--from-date YYYY[-MM[-DD]]` 和 `--to-date YYYY[-MM[-DD]]`。
   - 示例：`python scripts/backup_wechat.py --from-date 2024-03 --to-date 2024-06`
+
+如遇错误，请查看 `docs/Troubleshooting.md`。
 
 ### CI 说明（已禁用）/ CI (disabled by default)
 - 仓库默认关闭 CI；若需要启用：
