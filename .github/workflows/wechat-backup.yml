@@ -1,7 +1,7 @@
 name: WeChat Backup
 on:
   schedule:
-    - cron: "0 3 * * 0" # 每周日 03:00 UTC 运行
+    - cron: "0 7 * * 2" # 每周二 07:00 UTC 运行（北京时间 15:00）
   workflow_dispatch: {}
 
 permissions:
@@ -20,11 +20,11 @@ jobs:
       - run: pip install -r requirements.txt
 
       - name: Run backup
-        env:
-          WECHAT_APPID: ${{ secrets.WECHAT_APPID }}
-          WECHAT_APPSECRET: ${{ secrets.WECHAT_APPSECRET }}
-          WECHAT_ACCOUNT_NAME: "文不加点的张衔瑜"
-        run: python scripts/backup_wechat.py
+        run: |
+          python scripts/backup_wechat.py \
+            --appid "${{ secrets.WECHAT_APPID }}" \
+            --secret "${{ secrets.WECHAT_APPSECRET }}" \
+            --account-name "文不加点的张衔瑜"
 
       - name: Commit & Push
         uses: stefanzweifel/git-auto-commit-action@v6
