@@ -1,7 +1,7 @@
 name: WeChat Backup
 on:
   schedule:
-    - cron: "0 13 * * *"     # 每天 21:00（UTC+8）
+    - cron: "0 3 * * 0" # 每周日 03:00 UTC 运行
   workflow_dispatch: {}
 
 permissions:
