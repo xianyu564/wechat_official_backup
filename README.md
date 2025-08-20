@@ -3,6 +3,22 @@
 > 张衔瑜：
 > 把公众号散落的，都收集。
 
+> 重要提示（发布能力 / freepublish）
+>
+> 服务号可以通过服务端接口，使用发布相关能力，接口如下：
+>
+> 接口名称 | 英文名 | 请求路径
+> --- | --- | ---
+> 获取已发布的消息列表 | freepublish_batchget | /cgi-bin/freepublish/batchget
+> 删除发布文章 | freepublishDelete | /cgi-bin/freepublish/delete
+> 发布状态查询 | freepublish_get | /cgi-bin/freepublish/get
+> 获取已发布图文信息 | freepublishGetarticle | /cgi-bin/freepublish/getarticle
+> 发布草稿 | freepublish_submit | /cgi-bin/freepublish/submit
+>
+> 注：自 2025 年 7 月起，个人主体账号、企业主体未认证账号及不支持认证的账号将被回收以上接口的调用权限。
+>
+> 因此，个人主体账号将无法通过微信官方接口获取“已发布图文”的数据。本仓库在该场景下的作用主要在于提供合规与能力边界的提示，提醒：在官方权限收紧后，无法通过上述 API 拉取已发布图文。
+
 将我自己的微信公众号文章（已发布/草稿/永久图文素材）通过 **官方接口** 定时拉取，转为 Markdown，并将图片本地化存到同一仓库；同时提供一键自动化工作流，便于长期归档与公开展示。
 
 This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
@@ -39,13 +55,14 @@ requirements.txt
 - 若同名冲突，将自动生成 `YYYY-MM-DD 标题 (2).md`、`(3).md` 等。
 
 ### 快速开始 · 凭据配置（本地）/ Quick Start · Credentials (Local)
-1) 在仓库根目录新建 `.env`（已被 `.gitignore` 忽略，不会入库）：
-```dotenv
-WECHAT_APPID=YOUR_APPID_HERE
-WECHAT_APPSECRET=YOUR_APPSECRET_HERE
-WECHAT_ACCOUNT_NAME=文不加点的张衔瑜
+1) 在仓库根目录新建 `env.json`（已被 `.gitignore` 忽略，不会入库），可参考 `env.json.example`：
+```json
+{
+  "WECHAT_APPID": "YOUR_APPID_HERE",
+  "WECHAT_APPSECRET": "YOUR_APPSECRET_HERE",
+  "WECHAT_ACCOUNT_NAME": "文不加点的张衔瑜"
+}
 ```
-可参照现有init.env执行
 
 2) 安装依赖：
 ```bash
@@ -53,17 +70,19 @@ pip install -r requirements.txt
 ```
 
 ### 本地运行 / Local Usage
-两种方式（二选一）：
-- 使用命令行参数（优先级更高）
-```bash
-python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET> --account-name "文不加点的张衔瑜"
-```
-- 使用 `.env`（已配置时可直接）：
+运行方式：
+- 直接运行（默认从根目录 `env.json` 读取凭据）：
 ```bash
 python scripts/backup_wechat.py
 ```
+- 或使用命令行参数（优先级更高，覆盖 `env.json` 值）：
+```bash
+python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET> --account-name "文不加点的张衔瑜"
+```
 - **时间范围备份：** 支持 `--from-date YYYY[-MM[-DD]]` 和 `--to-date YYYY[-MM[-DD]]`。
   - 示例：`python scripts/backup_wechat.py --from-date 2024-03 --to-date 2024-06`
+
+如遇错误，请查看 `docs/Troubleshooting.md`。
 
 ### CI 说明（已禁用）/ CI (disabled by default)
 - 仓库默认关闭 CI；若需要启用：
