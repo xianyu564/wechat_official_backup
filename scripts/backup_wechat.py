@@ -79,7 +79,7 @@ def write_markdown(dirpath, title, url, ts, article_id, idx, md):
     name = f"{dt.strftime('%Y-%m-%d')}_{slug(title)}_{idx}_{article_id}.md"
     fm = [
         "---",
-        f'title: "{title.replace("\"", "\\\"")}"',
+        f'title: "{title.replace(\'"\', "\'")}"',
         f"date: {dt.isoformat()}",
         f"source: {url}",
         f"platform: wechat",
