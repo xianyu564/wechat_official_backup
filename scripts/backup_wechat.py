@@ -2,18 +2,20 @@
 import os, re, json, time, pathlib, hashlib, requests
 from datetime import datetime
 from scripts.utils_html import html_to_markdown_with_local_images
+import argparse # 新增导入 argparse
 
-# ===== 环境变量（GitHub Actions 中通过 Secrets 注入） =====
-APPID  = os.environ["WECHAT_APPID"]
-SECRET = os.environ["WECHAT_APPSECRET"]
-ACCOUNT_NAME = os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
+# ===== 移除环境变量定义，改为通过参数传递 =====
+# APPID  = os.environ["WECHAT_APPID"]
+# SECRET = os.environ["WECHAT_APPSECRET"]
+# ACCOUNT_NAME = os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
 
 # ===== 目录 =====
 ROOT     = pathlib.Path(__file__).resolve().parents[1]
-OUT_DIR  = ROOT / "content" / "wechat" / ACCOUNT_NAME
-IMG_ROOT = ROOT / "assets" / "wechat"
+# OUT_DIR 和 IMG_ROOT 将在 main 函数中根据传入参数动态确定
+# OUT_DIR  = ROOT / "content" / "wechat" / ACCOUNT_NAME
+# IMG_ROOT = ROOT / "assets" / "wechat"
 SNAP     = ROOT / "data" / "snapshots"
-for p in (OUT_DIR, IMG_ROOT, SNAP): p.mkdir(parents=True, exist_ok=True)
+for p in (SNAP, ): p.mkdir(parents=True, exist_ok=True) # 仅 SNAP 目录需要预先创建
 
 # ===== 基础工具 =====
 def slug(s: str) -> str:
@@ -34,9 +36,9 @@ def save_snapshot(prefix: str, obj: dict):
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     (SNAP / f"{prefix}-{ts}.json").write_text(json.dumps(obj, ensure_ascii=False, indent=2), "utf-8")
 
-def get_access_token() -> str:
+def get_access_token(appid: str, secret: str) -> str:
     url = ("https://api.weixin.qq.com/cgi-bin/token"
-           f"?grant_type=client_credential&appid={APPID}&secret={SECRET}")
+           f"?grant_type=client_credential&appid={appid}&secret={secret}")
     js = http_get_json(url)
     if "access_token" not in js:
         raise RuntimeError(f"get token failed: {js}")
@@ -51,7 +53,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
         f'title: "{(title or "无题").replace("\"", "\'")}"',
         f"date: {dt.isoformat()}",
         f"source: {url or ''}",
-        "platform: wechat",
+        f"platform: wechat",
         f"article_id: {article_id}",
         "---",
         ""
@@ -59,7 +61,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     (dirpath / name).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
 # ===== 备份：已发布（freepublish） =====
-def backup_published(token: str):
+def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
     all_items = []
     offset = 0
     while True:
@@ -91,12 +93,12 @@ def backup_published(token: str):
             title = n.get("title", "")
             url   = n.get("url", "")
             html  = n.get("content", "")
-            md = html_to_markdown_with_local_images(html, ts, article_id, IMG_ROOT)
-            year_dir = OUT_DIR / datetime.fromtimestamp(ts).strftime("%Y")
+            md = html_to_markdown_with_local_images(html, ts, article_id, img_root)
+            year_dir = out_dir / datetime.fromtimestamp(ts).strftime("%Y")
             write_markdown(year_dir, title, url, ts, article_id, i, md)
 
 # ===== 备份：草稿箱（draft） =====
-def backup_drafts(token: str):
+def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token={token}"
@@ -111,14 +113,14 @@ def backup_drafts(token: str):
                 title = n.get("title", "")
                 url   = n.get("url", "")
                 html  = n.get("content", "")
-                md = html_to_markdown_with_local_images(html, ts, media_id, IMG_ROOT)
-                year_dir = OUT_DIR / "drafts" / datetime.fromtimestamp(ts).strftime("%Y")
+                md = html_to_markdown_with_local_images(html, ts, media_id, img_root)
+                year_dir = out_dir / "drafts" / datetime.fromtimestamp(ts).strftime("%Y")
                 write_markdown(year_dir, title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
 
 # ===== 备份：永久图文素材（material/news） =====
-def backup_material_news(token: str):
+def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
@@ -133,14 +135,31 @@ def backup_material_news(token: str):
                 title = n.get("title", "")
                 url   = n.get("url", "")
                 html  = n.get("content", "")
-                md = html_to_markdown_with_local_images(html, ts, media_id, IMG_ROOT)
-                write_markdown(OUT_DIR / "material", title, url, ts, media_id, i, md)
+                md = html_to_markdown_with_local_images(html, ts, media_id, img_root)
+                write_markdown(out_dir / "material", title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
 
+def main():
+    parser = argparse.ArgumentParser(description="Backup WeChat Official Account articles")
+    parser.add_argument("--appid", required=True, help="WeChat AppID")
+    parser.add_argument("--secret", required=True, help="WeChat AppSecret")
+    parser.add_argument("--account-name", default="文不加点的张衔瑜", help="WeChat Official Account name")
+    parser.add_argument("--year", type=int, default=datetime.now().year, help="Year to backup (for content directory)")
+    args = parser.parse_args()
+
+    # 根据命令行参数动态确定目录
+    out_dir = ROOT / "content" / "wechat" / args.account_name
+    img_root = ROOT / "assets" / "wechat"
+
+    # 确保主目录存在
+    out_dir.mkdir(parents=True, exist_ok=True)
+    img_root.mkdir(parents=True, exist_ok=True)
+
+    token = get_access_token(args.appid, args.secret)
+    backup_published(token, out_dir, img_root)
+    # backup_drafts(token, out_dir, img_root) # 如需同步草稿/素材，取消注释
+    # backup_material_news(token, out_dir, img_root)
+
 if __name__ == "__main__":
-    token = get_access_token()  # 有效期约 7200 秒；每次运行获取一次足够。 :contentReference[oaicite:4]{index=4}
-    backup_published(token)     # ✅ 已发布列表（推荐主路径） :contentReference[oaicite:5]{index=5}
-    # 如需同步草稿/素材，取消下面两行注释：
-    # backup_drafts(token)      # ✅ 草稿箱（no_content=0 带 HTML 正文） :contentReference[oaicite:6]{index=6}
-    # backup_material_news(token)  # ✅ 永久图文素材（type=news） :contentReference[oaicite:7]{index=7}
+    main()
