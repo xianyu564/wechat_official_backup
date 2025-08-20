@@ -1,13 +1,11 @@
 name: WeChat Backup
 on:
   schedule:
-    - cron: "0 13 * * *"   # 每天 21:00 时间运行（UTC+8）
+    - cron: "0 13 * * *"     # 每天 21:00（UTC+8）
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # 允许提交变更（GITHUB_TOKEN 最小权限）
-# 最小权限原则，见 GitHub 官方指南：contents:write 即可提交回仓库
-# https://docs.github.com/.../controlling-permissions-for-github_token
+  contents: write   # 仅授予提交权限
 
 jobs:
   backup:
@@ -19,7 +17,7 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install requests html2text beautifulsoup4
+      - run: pip install -r requirements.txt
 
       - name: Run backup
         env:
@@ -35,4 +33,4 @@ jobs:
           file_pattern: |
             content/**/*.md
             assets/**/*
-
+            data/snapshots/**/*.json
