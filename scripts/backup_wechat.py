@@ -220,9 +220,23 @@ def main():
 
     # 读取 .env（如存在）
     load_dotenv(override=False)
-    appid = args.appid or os.getenv("WECHAT_APPID")
-    secret = args.secret or os.getenv("WECHAT_APPSECRET")
-    account_name = args.account_name or os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
+    appid = (
+        args.appid
+        or os.getenv("WECHAT_APPID")
+        or os.getenv("APPID")
+    )
+    secret = (
+        args.secret
+        or os.getenv("WECHAT_APPSECRET")
+        or os.getenv("AppSecret")
+        or os.getenv("APPSECRET")
+    )
+    account_name = (
+        args.account_name
+        or os.getenv("WECHAT_ACCOUNT_NAME")
+        or os.getenv("ACCOUNT_NAME")
+        or "文不加点的张衔瑜"
+    )
     if not appid or not secret:
         raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试\nWECHAT_APPID/WECHAT_APPSECRET not configured. Please set via --appid/--secret or .env file and try again.")
 
