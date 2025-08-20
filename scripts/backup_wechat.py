@@ -58,6 +58,28 @@ def http_post_json(url: str, payload: dict):
     r.raise_for_status()
     return r.json()
 
+"""
+永久素材管理接口封装（仅读取相关，符合“只走素材管理通道”的需求）：
+- 获取永久素材总数 get_materialcount
+- 获取永久素材列表 batchget_material
+- 获取永久素材 get_material
+"""
+
+def material_get_count(token: str) -> dict:
+    """GET /cgi-bin/material/get_materialcount"""
+    url = f"https://api.weixin.qq.com/cgi-bin/material/get_materialcount?access_token={token}"
+    return http_get_json(url)
+
+def material_batch_get(token: str, media_type: str, offset: int, count: int) -> dict:
+    """POST /cgi-bin/material/batchget_material"""
+    url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
+    return http_post_json(url, {"type": media_type, "offset": offset, "count": count})
+
+def material_get(token: str, media_id: str) -> dict:
+    """POST /cgi-bin/material/get_material（图文素材返回 JSON；其他类型返回对应二进制/结构）"""
+    url = f"https://api.weixin.qq.com/cgi-bin/material/get_material?access_token={token}"
+    return http_post_json(url, {"media_id": media_id})
+
 def save_snapshot(prefix: str, obj: dict):
     ts = datetime.now().strftime("%Y%m%d-%H%M%S")
     (SNAP / f"{prefix}-{ts}.json").write_text(json.dumps(obj, ensure_ascii=False, indent=2), "utf-8")
@@ -185,8 +207,7 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, sta
 def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     offset = 0
     while True:
-        url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
-        js = http_post_json(url, {"type": "news", "offset": offset, "count": 20})
+        js = material_batch_get(token, media_type="news", offset=offset, count=20)
         save_snapshot(f"materials-{offset}", js)
         items = js.get("item", [])
         for it in items:
@@ -293,9 +314,10 @@ def main():
     end_ts = parse_end(args.to_date)
 
     token = get_access_token(appid, secret)
-    backup_published(token, out_dir, img_root, start_ts, end_ts)
-    # backup_drafts(token, out_dir, img_root, start_ts, end_ts) # 如需同步草稿/素材，取消注释 # Uncomment to sync drafts/materials
-    # backup_material_news(token, out_dir, img_root, start_ts, end_ts)
+    # 仅走“永久素材管理接口”通道；以下两类暂不使用：
+    # backup_published(token, out_dir, img_root, start_ts, end_ts)  # freepublish（发布能力）禁用
+    # backup_drafts(token, out_dir, img_root, start_ts, end_ts)     # draft（草稿箱）禁用
+    backup_material_news(token, out_dir, img_root, start_ts, end_ts)
 
 if __name__ == "__main__":
     main()
