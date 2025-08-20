@@ -49,7 +49,6 @@ def http_get_json_with_session(url: str):
 def http_post_json(url: str, payload: dict):
     global SESSION
     if SESSION is None:
-    if SESSION is None:
         raise RuntimeError("SESSION is not initialized. Please initialize SESSION before making HTTP requests.")
     r = SESSION.post(url, json=payload, timeout=30)
     r.raise_for_status()
