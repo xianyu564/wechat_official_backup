@@ -94,9 +94,10 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     while (dirpath / candidate).exists():
         candidate = f"{base} ({suffix}).md"
         suffix += 1
+    sanitized_title = (title or "无题").replace('"', "'")
     fm = [
         "---",
-        f'title: "{(title or "无题").replace('"', "'")}"',
+        f'title: "{sanitized_title}"',
         f"date: {dt.isoformat()}",
         f"source: {url or ''}",
         f"platform: wechat",
