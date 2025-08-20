@@ -8,14 +8,14 @@
 This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
 It aims to preserve published words with care and clarity, and to make change history reviewable.
 
-## 功能
+## 功能 / Features
 - ✅ 官方接口拉取：发布列表（freepublish）、草稿箱（draft）、永久图文素材（material/news）  
 - ✅ HTML→Markdown 转换，图片**本地化**，避免外链失效  
 - ✅ GitHub Actions **定时备份**与**增量提交**  
 - ✅（可选）GitHub Pages 发布文章目录，供在线阅读  
 - ✅ 代码与内容可分支获取，满足不同使用者
 
-## 目录结构（主分支 `master`）/ Structure
+## 目录结构（主分支 `master`）/ Structure (`master` branch)
 ```text
 content/
   wechat/文不加点的张衔瑜/            # 文章 Markdown（按年份分目录生成）
@@ -30,11 +30,11 @@ requirements.txt
 .github/workflows.disabled/wechat-backup.yml   # CI 模板（已禁用）
 ```
 
-### 命名规范
+### 命名规范 / Naming Convention
 - 文章 Markdown 文件名：`YYYY-MM-DD 标题.md`
 - 若同名冲突，将自动生成 `YYYY-MM-DD 标题 (2).md`、`(3).md` 等。
 
-### 快速开始 · 凭据配置（本地）/ Credentials (Local)
+### 快速开始 · 凭据配置（本地）/ Quick Start · Credentials (Local)
 1) 在仓库根目录新建 `.env`（已被 `.gitignore` 忽略，不会入库）：
 ```dotenv
 WECHAT_APPID=YOUR_APPID_HERE
@@ -58,6 +58,8 @@ python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET>
 ```bash
 python scripts/backup_wechat.py
 ```
+- **时间范围备份：** 支持 `--from-date YYYY[-MM[-DD]]` 和 `--to-date YYYY[-MM[-DD]]`。
+  - 示例：`python scripts/backup_wechat.py --from-date 2024-03 --to-date 2024-06`
 
 ### CI 说明（已禁用）/ CI (disabled by default)
 - 仓库默认关闭 CI；若需要启用：
@@ -66,7 +68,7 @@ python scripts/backup_wechat.py
   3) 如需定时运行，自行恢复 `on.schedule` 配置
   4) 默认会从 `master` 创建特性分支并自动创建 PR
 
-  ### CI/PR 流程（已禁用，可自行配置）
+### CI/PR 流程（已禁用，可自行配置）/ CI/PR Flow (disabled, configurable)
 - 触发方式：
   - 手动触发（Actions → Run workflow）
   - 每周二 15:00（北京时间，UTC 07:00）自动运行
@@ -80,31 +82,54 @@ python scripts/backup_wechat.py
 - `WECHAT_APPSECRET`
 （若仅在本地使用，可不在 Secrets 中配置）
 
+### 分支策略 / Branch Strategy
+本仓库采用多分支策略，以满足不同使用场景和内容管理需求：
 
+1.  **`master`**（默认分支）：
+    - **用途：** 存储**核心代码**（`scripts/`、`requirements.txt`、`.gitignore`、`LICENSE`）以及文档（`README.md`、`docs/`）。
+    - **特点：** 保持精简、稳定，适合开发者快速获取工具代码，或作为 GitHub Pages 的源码分支（若仅发布代码相关内容）。
+    - **获取：** `git clone -b master --single-branch <repo_url>`
 
-### 分支说明
+2.  **`archive`**（内容归档分支）：
+    - **用途：** 专门用于存储**公众号文章备份内容**（`content/`、`assets/`、`data/snapshots/`）。
+    - **特点：** 随着备份的进行，此分支会持续增长，适合读者直接浏览文章内容，或作为 GitHub Pages 的内容源（若发布文章）。
+    - **获取：** `git clone -b archive --single-branch <repo_url>`
+    - **管理：** 备份脚本的产出应合并到此分支。
 
-* **`master`**（默认）：仅代码与工作流（包含目录规范、最小示例）；适合开发者获取脚本与自动化。
-* **`archive`**（内容分支）：只存文章 Markdown、图片与快照；适合读者直接浏览/检索文章；（可作为 GitHub Pages 源）。
-* **`feature/backup_code_dev`**：开发分支，用于脚本更新与测试，通过 PR 合入 `master`。
-* **`full`**（聚合分支，可选）：聚合 `master` + `archive` 的内容，方便“一键获取全部”。
+3.  **`feature/backup_code_dev`**（开发分支）：
+    - **用途：** 用于脚本功能开发、重构、测试等**代码层面的迭代**。
+    - **特点：** 临时性开发工作区，代码测试成熟后通过 PR 合并到 `master`。
+    - **获取：** `git checkout -b feature/backup_code_dev master` （从 `master` 创建）
 
-> 只要代码：`git clone -b master --single-branch ...`
-> 只要文章：`git clone -b archive --single-branch ...`
-> 全部：`git clone ...` 或切到 `full` 分支。
+4.  **`backup/run-YYYYMMDD-HHMMSS`**（自动化备份 PR 分支，由 CI 自动创建）：
+    - **用途：** CI 每次运行时自动创建，包含**当次备份的所有增量内容**，用于向 `archive` 分支发起 PR。
+    - **特点：** 生命周期短暂，仅为 PR 审核而存在，合并后可删除。
 
 ### Fork 使用建议（公开仓库）/ Fork Recommendations
-- 仅代码（不含我的文章备份）：fork 后只保留 `master` 或仅保留 `scripts/`、`requirements.txt`，并清空 `content/`、`assets/`、`data/snapshots/`
-- 仅备份内容（不含代码）：fork 后删除 `scripts/` 与 CI，仅同步 `content/`、`assets/`、`data/snapshots/`
-- 全量：保留所有分支与目录结构
+根据你的需求，选择不同的 Fork 策略：
 
-## 许可
-- 该仓库仅备份我本人公众号内容；请确保你拥有备份目标账号的合法权限。
-* **代码**：MIT（或你指定的开源许可）。
-* **内容（公众号文章及派生 Markdown/PDF/图片）**：默认保留所有权利，或选择 CC BY-NC-ND 4.0 等合适条款。
-  在仓库根目录放置 `LICENSE`（代码）与 `CONTENT-LICENSE`（内容）分别声明。
+- **仅获取代码（不含我的文章备份）**：
+  - Fork 后，可直接使用 `master` 分支。若不需要文章内容，清空 `content/`、`assets/`、`data/snapshots/` 目录。
+  - 你的 CI 可配置为只保留 `scripts/` 和 `requirements.txt` 相关路径。
+  - `git clone -b master --single-branch <你的fork_url>`
 
-## 致谢
+- **仅获取文章内容（不含代码）**：
+  - Fork 后，切换到 `archive` 分支（如果已创建），并清理 `scripts/` 和 CI 配置文件。
+  - `git clone -b archive --single-branch <你的fork_url>`
 
+- **获取所有内容（包括代码与所有文章备份）**：
+  - 直接 Fork 仓库，然后 `git clone <你的fork_url>`。你将获得所有分支和全部历史。
+
+### 许可 / License
+本仓库的许可区分**代码**与**内容**：
+
+- **代码**：采用 MIT 许可证。
+- **内容（公众号文章及派生 Markdown/PDF/图片）**：
+  - 默认保留所有权利。
+  - 若未来有开放计划，将另行声明（例如 CC BY-NC-ND 4.0）。
+  - 代码许可证文件为 `LICENSE`，内容许可文件（若有）为 `CONTENT-LICENSE`。
+
+### 致谢 / Acknowledgements
 * GitHub Actions 与 Pages
 * 官方微信公众号接口
+* `BeautifulSoup` & `html2text` & `requests` & `python-dotenv`
