@@ -1,7 +1,7 @@
 ﻿# 微信公众号备份 wechat_official_backup
 
-> 写给我的读者：
-> 把公众号里散落的文字，变成可被长久保存与再次相遇的光。那些夜深人静写下的句子，值得在版本历史里继续呼吸。
+> 张衔瑜：
+> 把公众号散落的，都收集。
 
 This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
 It aims to preserve published words with care and clarity, and to make change history reviewable.
