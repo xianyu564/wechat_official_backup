@@ -7,6 +7,7 @@ from datetime import datetime
 from scripts.utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
 from dotenv import load_dotenv
+from typing import Optional # 修复：新增导入 Optional
 
 # ===== 移除环境变量定义，改为通过参数传递 =====
 # APPID  = os.environ["WECHAT_APPID"]
