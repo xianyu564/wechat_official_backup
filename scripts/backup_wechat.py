@@ -25,7 +25,6 @@ for p in (SNAP, ): p.mkdir(parents=True, exist_ok=True) # 仅 SNAP 目录需要�
 SESSION = None  # 在 main 中初始化具备重试的会话
 def slug(s: str) -> str:
     s = re.sub(r"[^\w\u4e00-\u9fa5\- ]+", "", (s or "").strip()).replace(" ", "-")
-    return re.sub(r"-{2,}", "-", s)[:80] or "untitled"
 
 def http_get_json(url: str):
     global SESSION
