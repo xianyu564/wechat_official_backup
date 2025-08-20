@@ -4,9 +4,13 @@ import os, re, json, time, pathlib, hashlib, requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime
-from scripts.utils_html import html_to_markdown_with_local_images
+try:
+    from scripts.utils_html import html_to_markdown_with_local_images
+except ModuleNotFoundError:
+    import sys
+    sys.path.append(str(pathlib.Path(__file__).resolve().parent))
+    from utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
-from dotenv import load_dotenv
 from typing import Optional # 修复：新增导入 Optional
 
 # ===== 移除环境变量定义，改为通过参数传递 =====
@@ -94,9 +98,10 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     while (dirpath / candidate).exists():
         candidate = f"{base} ({suffix}).md"
         suffix += 1
+    sanitized_title = (title or "无题").replace('"', "'")
     fm = [
         "---",
-        f'title: "{(title or "无题").replace("\"", "\'")}"',
+        f'title: "{sanitized_title}"',
         f"date: {dt.isoformat()}",
         f"source: {url or ''}",
         f"platform: wechat",
@@ -107,7 +112,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     (dirpath / candidate).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
 # ===== 备份：已发布（freepublish） =====
-def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     all_items = []
     offset = 0
     while True:
@@ -150,7 +155,7 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, 
             write_markdown(year_dir, title, url, ts, article_id, i, md)
 
 # ===== 备份：草稿箱（draft） =====
-def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token={token}"
@@ -177,7 +182,7 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, sta
         time.sleep(0.2)
 
 # ===== 备份：永久图文素材（material/news） =====
-def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
@@ -212,11 +217,25 @@ def main():
     parser.add_argument("--to-date", dest="to_date", help="Filter end date (YYYY or YYYY-MM or YYYY-MM-DD)")
     args = parser.parse_args()
 
-    # 读取 .env（如存在）
-    load_dotenv(override=False)
-    appid = args.appid or os.getenv("WECHAT_APPID")
-    secret = args.secret or os.getenv("WECHAT_APPSECRET")
-    account_name = args.account_name or os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
+    # 配置来源：优先命令行参数，其次读取仓库根目录的 env.json（不再使用 .env 文件）
+    config_path = ROOT / "env.json"
+    config: dict = {}
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            raise SystemExit(f"Failed to parse env.json: {e}")
+
+    def first_from_config(keys: list[str]) -> Optional[str]:
+        for key in keys:
+            val = config.get(key)
+            if val:
+                return val
+        return None
+
+    appid = args.appid or first_from_config(["WECHAT_APPID", "APPID", "WECHAT_APP_ID", "APP_ID"])
+    secret = args.secret or first_from_config(["WECHAT_APPSECRET", "APPSECRET", "APP_SECRET", "AppSecret", "WECHAT_APP_SECRET"])
+    account_name = args.account_name or first_from_config(["WECHAT_ACCOUNT_NAME", "ACCOUNT_NAME", "WECHAT_NAME"]) or "文不加点的张衔瑜"
     if not appid or not secret:
         raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试\nWECHAT_APPID/WECHAT_APPSECRET not configured. Please set via --appid/--secret or .env file and try again.")
 
