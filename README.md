@@ -1,12 +1,16 @@
 ﻿# 微信公众号备份 wechat_official_backup
 
-本仓库用于备份我本人公众号《文不加点的张衔瑜》的已发布/草稿/素材内容到 GitHub，便于归档与审阅。
+> 写给我的读者：
+> 把公众号里散落的文字，变成可被长久保存与再次相遇的光。那些夜深人静写下的句子，值得在版本历史里继续呼吸。
+
+This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
+It aims to preserve published words with care and clarity, and to make change history reviewable.
 
 ### 命名规范
 - 文章 Markdown 文件名：`YYYY-MM-DD 标题.md`
 - 若同名冲突，将自动生成 `YYYY-MM-DD 标题 (2).md`、`(3).md` 等。
 
-### 目录结构
+### 目录结构 / Structure
 ```text
 content/
   wechat/文不加点的张衔瑜/            # 文章 Markdown（按年份分目录生成）
@@ -21,7 +25,7 @@ requirements.txt
 .github/workflows.disabled/wechat-backup.yml   # CI 模板（已禁用）
 ```
 
-### 凭据配置（本地）
+### 凭据配置（本地）/ Credentials (Local)
 1) 在仓库根目录新建 `.env`（已被 `.gitignore` 忽略，不会入库）：
 ```dotenv
 WECHAT_APPID=YOUR_APPID_HERE
@@ -35,7 +39,7 @@ WECHAT_ACCOUNT_NAME=文不加点的张衔瑜
 pip install -r requirements.txt
 ```
 
-### 本地运行
+### 本地运行 / Local Usage
 两种方式（二选一）：
 - 使用命令行参数（优先级更高）
 ```bash
@@ -46,7 +50,7 @@ python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET>
 python scripts/backup_wechat.py
 ```
 
-### CI 说明（已禁用）
+### CI 说明（已禁用）/ CI (disabled by default)
 - 仓库默认关闭 CI；若需要启用：
   1) 将 `.github/workflows.disabled/wechat-backup.yml` 移动到 `.github/workflows/`
   2) 在仓库 Secrets 配置 `WECHAT_APPID`、`WECHAT_APPSECRET`
@@ -62,12 +66,12 @@ python scripts/backup_wechat.py
   2) 执行备份脚本，产生的 `content/`、`assets/`、`data/snapshots/` 变更会被提交并推送
   3) 自动向 `master` 发起 PR，便于人工审阅与合并
 
-### GitHub 仓库 Secrets（CI使用）
+### GitHub 仓库 Secrets（CI使用）/ GitHub Secrets (for CI)
 - `WECHAT_APPID`
 - `WECHAT_APPSECRET`
 （若仅在本地使用，可不在 Secrets 中配置）
 
-### 本地备份分支策略（建议）
+### 本地备份分支策略（建议）/ Branch Strategy (Local)
 - 每次备份固定一个时间段（例如 2024-01 ~ 2024-06），从 `master` 新建特性分支，命名示例：
   - `backup/2024H1`
   - `backup/2024Q3`
@@ -76,7 +80,7 @@ python scripts/backup_wechat.py
   - 自查差异，提交并推送
   - 发起 PR 合并到 `master`，便于审阅
 
-### Fork 使用建议（公开仓库）
+### Fork 使用建议（公开仓库）/ Fork Recommendations
 - 仅代码（不含我的文章备份）：fork 后只保留 `master` 或仅保留 `scripts/`、`requirements.txt`，并清空 `content/`、`assets/`、`data/snapshots/`
 - 仅备份内容（不含代码）：fork 后删除 `scripts/` 与 CI，仅同步 `content/`、`assets/`、`data/snapshots/`
 - 全量：保留所有分支与目录结构

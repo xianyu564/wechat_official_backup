@@ -9,10 +9,18 @@ from datetime import datetime
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 def html_to_markdown_with_local_images(html: str, ts: int, article_id: str, img_root: pathlib.Path):
-    """
-    1) 解析 <img>，把 data-src/src 的远程图片下载到本地
-    2) 改写 <img src> 为仓库相对路径，保证 GitHub Pages 可展示
-    3) 转 Markdown（保留链接/图片）
+    """Convert WeChat HTML into Markdown while localizing images.
+
+    Steps
+    - Parse <img> tags, download data-src/src images to a local path.
+    - Rewrite <img src> to repository-relative path so it renders on GitHub.
+    - Convert the updated HTML to Markdown (keep links and images).
+
+    参数/Params
+    - html: 原始 HTML 字符串 / raw HTML string
+    - ts: 文章时间戳（用于分年存储图片） / unix timestamp of the article
+    - article_id: 文章或素材标识 / article or material identifier
+    - img_root: 图片根目录，如 assets/wechat/ / image root dir
     """
     soup = BeautifulSoup(html or "", "html.parser")
     img_dir = img_root / datetime.fromtimestamp(ts).strftime("%Y") / article_id

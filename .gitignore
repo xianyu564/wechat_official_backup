@@ -1,3 +1,36 @@
-# 用于存储本地环境变量的 .env 文件
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-wheel-metadata/
+*.egg-info/
+dist/
+build/
+
+# OS / Editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local env & secrets
 .env
+*.local
+.env.*.local
+
+# Logs
+*.log
+
+# Coverage / tests
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Node (if any front-end helpers later)
+node_modules/
 
