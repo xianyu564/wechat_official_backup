@@ -3,6 +3,22 @@
 > 张衔瑜：
 > 把公众号散落的，都收集。
 
+> 重要提示（发布能力 / freepublish）
+>
+> 服务号可以通过服务端接口，使用发布相关能力，接口如下：
+>
+> 接口名称 | 英文名 | 请求路径
+> --- | --- | ---
+> 获取已发布的消息列表 | freepublish_batchget | /cgi-bin/freepublish/batchget
+> 删除发布文章 | freepublishDelete | /cgi-bin/freepublish/delete
+> 发布状态查询 | freepublish_get | /cgi-bin/freepublish/get
+> 获取已发布图文信息 | freepublishGetarticle | /cgi-bin/freepublish/getarticle
+> 发布草稿 | freepublish_submit | /cgi-bin/freepublish/submit
+>
+> 注：自 2025 年 7 月起，个人主体账号、企业主体未认证账号及不支持认证的账号将被回收以上接口的调用权限。
+>
+> 因此，个人主体账号将无法通过微信官方接口获取“已发布图文”的数据。本仓库在该场景下的作用主要在于提供合规与能力边界的提示，提醒：在官方权限收紧后，无法通过上述 API 拉取已发布图文。
+
 将我自己的微信公众号文章（已发布/草稿/永久图文素材）通过 **官方接口** 定时拉取，转为 Markdown，并将图片本地化存到同一仓库；同时提供一键自动化工作流，便于长期归档与公开展示。
 
 This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
