@@ -5,6 +5,7 @@ from urllib3.util.retry import Retry
 from datetime import datetime
 from scripts.utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
+from dotenv import load_dotenv
 
 # ===== 移除环境变量定义，改为通过参数传递 =====
 # APPID  = os.environ["WECHAT_APPID"]
@@ -68,7 +69,17 @@ def create_retry_session() -> requests.Session:
 def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article_id: str, idx: int, md: str):
     dirpath.mkdir(parents=True, exist_ok=True)
     dt = datetime.fromtimestamp(ts)
-    name = f"{dt.strftime('%Y-%m-%d')}_{slug(title)}_{idx}_{article_id}.md"
+    # 命名规则：YYYY-MM-DD + 文章标题（出现重名则追加 (2)、(3)...）
+    def sanitize_filename(name: str) -> str:
+        name = re.sub(r"[\\/:*?\"<>|]", "", name or "无题")
+        name = re.sub(r"\s+", " ", name).strip()
+        return name[:180]
+    base = f"{dt.strftime('%Y-%m-%d')} {sanitize_filename(title)}"
+    candidate = f"{base}.md"
+    suffix = 2
+    while (dirpath / candidate).exists():
+        candidate = f"{base} ({suffix}).md"
+        suffix += 1
     fm = [
         "---",
         f'title: "{(title or "无题").replace("\"", "\'")}"',
@@ -79,7 +90,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
         "---",
         ""
     ]
-    (dirpath / name).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
+    (dirpath / candidate).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
 # ===== 备份：已发布（freepublish） =====
 def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
@@ -167,14 +178,22 @@ def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Pa
 
 def main():
     parser = argparse.ArgumentParser(description="Backup WeChat Official Account articles")
-    parser.add_argument("--appid", required=True, help="WeChat AppID")
-    parser.add_argument("--secret", required=True, help="WeChat AppSecret")
+    parser.add_argument("--appid", help="WeChat AppID")
+    parser.add_argument("--secret", help="WeChat AppSecret")
     parser.add_argument("--account-name", default="文不加点的张衔瑜", help="WeChat Official Account name")
     parser.add_argument("--year", type=int, default=datetime.now().year, help="Year to backup (for content directory)")
     args = parser.parse_args()
 
+    # 读取 .env（如存在）
+    load_dotenv(override=False)
+    appid = args.appid or os.getenv("WECHAT_APPID")
+    secret = args.secret or os.getenv("WECHAT_APPSECRET")
+    account_name = args.account_name or os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
+    if not appid or not secret:
+        raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试")
+
     # 根据命令行参数动态确定目录
-    out_dir = ROOT / "content" / "wechat" / args.account_name
+    out_dir = ROOT / "content" / "wechat" / account_name
     img_root = ROOT / "assets" / "wechat"
 
     # 确保主目录存在
@@ -185,7 +204,7 @@ def main():
     global SESSION
     SESSION = create_retry_session()
 
-    token = get_access_token(args.appid, args.secret)
+    token = get_access_token(appid, secret)
     backup_published(token, out_dir, img_root)
     # backup_drafts(token, out_dir, img_root) # 如需同步草稿/素材，取消注释
     # backup_material_news(token, out_dir, img_root)

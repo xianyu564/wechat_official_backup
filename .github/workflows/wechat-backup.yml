@@ -12,12 +12,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - run: pip install -r requirements.txt
+
+      - name: Create feature branch for this run
+        run: |
+          BRANCH="backup/run-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
 
       - name: Run backup
         run: |
@@ -27,10 +35,24 @@ jobs:
             --account-name "文不加点的张衔瑜"
 
       - name: Commit & Push
-        uses: stefanzweifel/git-auto-commit-action@v6
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: sync wechat articles"
+            git push -u origin "$BRANCH"
+          fi
+
+      - name: Open Pull Request
+        if: success()
+        uses: peter-evans/create-pull-request@v6
         with:
-          commit_message: "chore: sync wechat articles"
-          file_pattern: |
-            content/**/*.md
-            assets/**/*
-            data/snapshots/**/*.json
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: sync wechat articles"
+          branch: ${{ env.BRANCH }}
+          title: "WeChat backup: ${{ env.BRANCH }}"
+          body: "Automated backup run. Please review changes."
+          base: master
