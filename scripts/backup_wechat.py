@@ -1,163 +1,146 @@
-# scripts/backup_wechat.py
+# -*- coding: utf-8 -*-
 import os, re, json, time, pathlib, hashlib, requests
 from datetime import datetime
-from urllib.parse import urlparse
-from bs4 import BeautifulSoup           # pip install beautifulsoup4
-import html2text                        # pip install html2text
+from scripts.utils_html import html_to_markdown_with_local_images
 
+# ===== 环境变量（GitHub Actions 中通过 Secrets 注入） =====
 APPID  = os.environ["WECHAT_APPID"]
 SECRET = os.environ["WECHAT_APPSECRET"]
 ACCOUNT_NAME = os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
 
-ROOT    = pathlib.Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "content" / "wechat" / ACCOUNT_NAME
-IMG_DIR = ROOT / "assets" / "wechat"
-SNAP    = ROOT / "data" / "snapshots"
-for p in (OUT_DIR, IMG_DIR, SNAP): p.mkdir(parents=True, exist_ok=True)
+# ===== 目录 =====
+ROOT     = pathlib.Path(__file__).resolve().parents[1]
+OUT_DIR  = ROOT / "content" / "wechat" / ACCOUNT_NAME
+IMG_ROOT = ROOT / "assets" / "wechat"
+SNAP     = ROOT / "data" / "snapshots"
+for p in (OUT_DIR, IMG_ROOT, SNAP): p.mkdir(parents=True, exist_ok=True)
 
-def get_access_token():
-    url = ("https://api.weixin.qq.com/cgi-bin/token"
-           f"?grant_type=client_credential&appid={APPID}&secret={SECRET}")
-    r = requests.get(url, timeout=15)
+# ===== 基础工具 =====
+def slug(s: str) -> str:
+    s = re.sub(r"[^\w\u4e00-\u9fa5\- ]+", "", (s or "").strip()).replace(" ", "-")
+    return re.sub(r"-{2,}", "-", s)[:80] or "untitled"
+
+def http_get_json(url: str):
+    r = requests.get(url, timeout=20)
     r.raise_for_status()
-    js = r.json()
-    if "access_token" not in js:
-        raise RuntimeError(f"get token failed: {js}")
-    return js["access_token"], js["expires_in"]
+    return r.json()
 
-def wechat_post(api, payload):
-    token, _ = get_access_token()
-    url = f"https://api.weixin.qq.com/cgi-bin/{api}?access_token={token}"
+def http_post_json(url: str, payload: dict):
     r = requests.post(url, json=payload, timeout=30)
     r.raise_for_status()
-    js = r.json()
-    if js.get("errcode", 0) != 0 and "item" not in js:
-        # 兼容 count 接口等无 errcode=0 也返回正常字段的情况
-        raise RuntimeError(f"WX API error: {api} -> {js}")
-    return js
+    return r.json()
 
-def slug(s):
-    s = re.sub(r"\s+", "-", re.sub(r"[^\w\u4e00-\u9fa5\- ]+", "", s.strip()))
-    return re.sub(r"-{2,}", "-", s)[:80]
+def save_snapshot(prefix: str, obj: dict):
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    (SNAP / f"{prefix}-{ts}.json").write_text(json.dumps(obj, ensure_ascii=False, indent=2), "utf-8")
 
-def html_to_md_and_save_images(article_id, html, ts):
-    # 先把 <img> 本地化，再转 md，避免链接丢失
-    soup = BeautifulSoup(html, "html.parser")
-    img_dir = IMG_DIR / datetime.fromtimestamp(ts).strftime("%Y") / article_id
-    img_dir.mkdir(parents=True, exist_ok=True)
-    for img in soup.find_all("img"):
-        src = img.get("data-src") or img.get("src")
-        if not src: 
-            continue
-        try:
-            fn = hashlib.md5(src.encode("utf-8")).hexdigest()[:12]
-            ext = pathlib.Path(urlparse(src).path).suffix or ".jpg"
-            local = img_dir / f"{fn}{ext}"
-            if not local.exists():
-                rr = requests.get(src, timeout=30)
-                rr.raise_for_status()
-                local.write_bytes(rr.content)
-            # 改写为相对路径，便于 GitHub Pages
-            rel = os.path.relpath(local, ROOT)
-            img["src"] = "/" + rel.replace("\\", "/")
-            # wechat 常见 data-src
-            if img.has_attr("data-src"):
-                img["data-src"] = img["src"]
-        except Exception:
-            continue
-    html = str(soup)
-    # 转 Markdown
-    h = html2text.HTML2Text()
-    h.ignore_links = False
-    h.ignore_images = False
-    md = h.handle(html)
-    return md
+def get_access_token() -> str:
+    url = ("https://api.weixin.qq.com/cgi-bin/token"
+           f"?grant_type=client_credential&appid={APPID}&secret={SECRET}")
+    js = http_get_json(url)
+    if "access_token" not in js:
+        raise RuntimeError(f"get token failed: {js}")
+    return js["access_token"]
 
-def write_markdown(dirpath, title, url, ts, article_id, idx, md):
+def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article_id: str, idx: int, md: str):
     dirpath.mkdir(parents=True, exist_ok=True)
     dt = datetime.fromtimestamp(ts)
     name = f"{dt.strftime('%Y-%m-%d')}_{slug(title)}_{idx}_{article_id}.md"
-    sanitized_title = title.replace('"', "'")
     fm = [
         "---",
-        f'title: "{sanitized_title}"',
+        f'title: "{(title or "无题").replace("\"", "\'")}"',
         f"date: {dt.isoformat()}",
-        f"source: {url}",
-        f"platform: wechat",
+        f"source: {url or ''}",
+        "platform: wechat",
         f"article_id: {article_id}",
         "---",
         ""
     ]
-    (dirpath / name).write_text("\n".join(fm) + md, encoding="utf-8")
+    (dirpath / name).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
-def save_snapshot(prefix, obj):
-    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-    (SNAP / f"{prefix}-{ts}.json").write_text(json.dumps(obj, ensure_ascii=False, indent=2), "utf-8")
-
-def backup_published():
+# ===== 备份：已发布（freepublish） =====
+def backup_published(token: str):
     all_items = []
     offset = 0
     while True:
-        js = wechat_post("freepublish/batchget", {"offset": offset, "count": 20})
-        save_snapshot("published", js)
+        url = f"https://api.weixin.qq.com/cgi-bin/freepublish/batchget?access_token={token}"
+        js = http_post_json(url, {"offset": offset, "count": 20, "no_content": 0})
+        save_snapshot(f"published-{offset}", js)
         items = js.get("item", [])
-        all_items += items
-        if len(items) < 20: break
+        all_items.extend(items)
+        if len(items) < 20:
+            break
         offset += 20
 
+    # 遍历每条，写入 Markdown（必要时回退调用 getarticle 拿 content）
     for it in all_items:
-        article_id = it.get("article_id") or hashlib.md5(json.dumps(it).encode()).hexdigest()[:10]
-        content = it["content"]
+        article_id = it.get("article_id") or hashlib.md5(json.dumps(it, ensure_ascii=False).encode()).hexdigest()[:10]
+        content = it.get("content", {})
         ts = int(content.get("update_time") or content.get("create_time") or time.time())
         news = content.get("news_item", [])
+        # 若 batchget 没带 content，可调用 getarticle 获取
+        need_fetch = any(not n.get("content") for n in news)
+        if need_fetch:
+            url_ga = f"https://api.weixin.qq.com/cgi-bin/freepublish/getarticle?access_token={token}"
+            ga = http_post_json(url_ga, {"article_id": article_id})
+            save_snapshot(f"published-getarticle-{article_id}", ga)
+            content = ga.get("content", content)
+            news = content.get("news_item", news)
+
         for i, n in enumerate(news, start=1):
-            title = n.get("title", "untitled")
+            title = n.get("title", "")
             url   = n.get("url", "")
             html  = n.get("content", "")
-            md = html_to_md_and_save_images(article_id, html, ts)
-            write_markdown(OUT_DIR / datetime.fromtimestamp(ts).strftime("%Y"), title, url, ts, article_id, i, md)
+            md = html_to_markdown_with_local_images(html, ts, article_id, IMG_ROOT)
+            year_dir = OUT_DIR / datetime.fromtimestamp(ts).strftime("%Y")
+            write_markdown(year_dir, title, url, ts, article_id, i, md)
 
-def backup_drafts():
-    # 可选：拉草稿箱全文（不需要的话可注释）
+# ===== 备份：草稿箱（draft） =====
+def backup_drafts(token: str):
     offset = 0
     while True:
-        js = wechat_post("draft/batchget", {"offset": offset, "count": 20, "no_content": 0})
-        save_snapshot("drafts", js)
+        url = f"https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token={token}"
+        js = http_post_json(url, {"offset": offset, "count": 20, "no_content": 0})
+        save_snapshot(f"drafts-{offset}", js)
         items = js.get("item", [])
         for it in items:
             media_id = it.get("media_id", "draft")
             content = it.get("content", {})
             ts = int(content.get("update_time") or content.get("create_time") or time.time())
             for i, n in enumerate(content.get("news_item", []), start=1):
-                title = n.get("title", "untitled")
+                title = n.get("title", "")
                 url   = n.get("url", "")
                 html  = n.get("content", "")
-                md = html_to_md_and_save_images(media_id, html, ts)
-                write_markdown(OUT_DIR / "drafts" / datetime.fromtimestamp(ts).strftime("%Y"), title, url, ts, media_id, i, md)
+                md = html_to_markdown_with_local_images(html, ts, media_id, IMG_ROOT)
+                year_dir = OUT_DIR / "drafts" / datetime.fromtimestamp(ts).strftime("%Y")
+                write_markdown(year_dir, title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
 
-def backup_material_news():
-    # 可选：旧图文永久素材
+# ===== 备份：永久图文素材（material/news） =====
+def backup_material_news(token: str):
     offset = 0
     while True:
-        js = wechat_post("material/batchget_material", {"type": "news", "offset": offset, "count": 20})
-        save_snapshot("materials", js)
+        url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
+        js = http_post_json(url, {"type": "news", "offset": offset, "count": 20})
+        save_snapshot(f"materials-{offset}", js)
         items = js.get("item", [])
         for it in items:
             media_id = it.get("media_id", "news")
             content = it.get("content", {})
+            ts = int(time.time())
             for i, n in enumerate(content.get("news_item", []), start=1):
-                title = n.get("title", "untitled")
+                title = n.get("title", "")
                 url   = n.get("url", "")
                 html  = n.get("content", "")
-                ts = int(time.time())
-                md = html_to_md_and_save_images(media_id, html, ts)
+                md = html_to_markdown_with_local_images(html, ts, media_id, IMG_ROOT)
                 write_markdown(OUT_DIR / "material", title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
 
 if __name__ == "__main__":
-    backup_published()       # 已发布（推荐）
-    # backup_drafts()        # 可选
-    # backup_material_news() # 可选
+    token = get_access_token()  # 有效期约 7200 秒；每次运行获取一次足够。 :contentReference[oaicite:4]{index=4}
+    backup_published(token)     # ✅ 已发布列表（推荐主路径） :contentReference[oaicite:5]{index=5}
+    # 如需同步草稿/素材，取消下面两行注释：
+    # backup_drafts(token)      # ✅ 草稿箱（no_content=0 带 HTML 正文） :contentReference[oaicite:6]{index=6}
+    # backup_material_news(token)  # ✅ 永久图文素材（type=news） :contentReference[oaicite:7]{index=7}
