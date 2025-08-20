@@ -34,7 +34,10 @@ def http_get_json(url: str):
     r.raise_for_status()
     return r.json()
 
-def http_post_json(url: str, payload: dict):
+def http_get_json_with_session(url: str):
+    """
+    Perform a GET request using the SESSION (with retries), returning the JSON response.
+    """
     global SESSION
     client = SESSION or requests
     if SESSION is None:
