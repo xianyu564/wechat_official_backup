@@ -28,6 +28,8 @@ WECHAT_APPID=YOUR_APPID_HERE
 WECHAT_APPSECRET=YOUR_APPSECRET_HERE
 WECHAT_ACCOUNT_NAME=文不加点的张衔瑜
 ```
+可参照现有init.env执行
+
 2) 安装依赖：
 ```bash
 pip install -r requirements.txt
