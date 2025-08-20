@@ -33,7 +33,7 @@ jobs:
           python scripts/backup_wechat.py \
             --appid "${{ secrets.WECHAT_APPID }}" \
             --secret "${{ secrets.WECHAT_APPSECRET }}" \
-            --account-name "文不加点的张衔瑜"
+            --account-name "文不加点的张衔瑜" # (user need to change this to the actual account name)
 
       - name: Commit & Push
         id: commit
