@@ -6,15 +6,17 @@ This repository is meant for WeChat Official Account Backup.
 目录结构建议（可调整）：
 ```text
 wechat-backup/
- content/
-   wechat/文不加点的张衔瑜/2025/  # 文章 Markdown
- assets/
-   wechat/2025/                     # 本地化图片
- data/
-   snapshots/                       # 原始 JSON 归档
- scripts/
-   backup_wechat.py
- .github/workflows/wechat-backup.yml
+├─ content/
+│  └─ wechat/文不加点的张衔瑜/           # 文章 Markdown（按年份分目录）
+├─ assets/
+│  └─ wechat/                            # 本地化图片（按年/文章ID）
+├─ data/
+│  └─ snapshots/                         # 保留接口原始 JSON（审计 / 排错）
+├─ scripts/
+│  ├─ backup_wechat.py                   # 主脚本（已发布/草稿/素材 → MD）
+│  └─ utils_html.py                      # HTML → Markdown & 图片本地化
+├─ requirements.txt
+└─ .github/workflows/wechat-backup.yml   # 定时任务
 ```
 
 使用说明（简要）：
