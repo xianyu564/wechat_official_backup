@@ -1,7 +1,10 @@
-﻿# wechat_official_backup
+﻿# 微信公众号备份 wechat_official_backup
 
-本仓库用于《文不加点的张衔瑜》公众号的迁移与备份。
+本仓库是实例化在《文不加点的张衔瑜》公众号的迁移与备份。
 This repository is meant for WeChat Official Account Backup.
+
+该公众号系本人自有自建。
+This WeChat Official Acccount is owned by myself.
 
 目录结构建议（可调整）：
 ```text
