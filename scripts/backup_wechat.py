@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, re, json, time, pathlib, hashlib, requests
+import calendar
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime
@@ -93,7 +94,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     (dirpath / candidate).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
 # ===== 备份：已发布（freepublish） =====
-def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
+def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
     all_items = []
     offset = 0
     while True:
@@ -112,6 +113,10 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
         article_id = it.get("article_id") or hashlib.md5(json.dumps(it, ensure_ascii=False).encode()).hexdigest()[:10]
         content = it.get("content", {})
         ts = int(content.get("update_time") or content.get("create_time") or time.time())
+        if start_ts is not None and ts < start_ts:
+            continue
+        if end_ts is not None and ts > end_ts:
+            continue
         news = content.get("news_item", [])
         # 若 batchget 没带 content，可调用 getarticle 获取
         need_fetch = any(not n.get("content") for n in news)
@@ -132,7 +137,7 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
             write_markdown(year_dir, title, url, ts, article_id, i, md)
 
 # ===== 备份：草稿箱（draft） =====
-def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
+def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token={token}"
@@ -143,6 +148,10 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
             media_id = it.get("media_id", "draft")
             content = it.get("content", {})
             ts = int(content.get("update_time") or content.get("create_time") or time.time())
+            if start_ts is not None and ts < start_ts:
+                continue
+            if end_ts is not None and ts > end_ts:
+                continue
             for i, n in enumerate(content.get("news_item", []), start=1):
                 title = n.get("title", "")
                 url   = n.get("url", "")
@@ -155,7 +164,7 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
         time.sleep(0.2)
 
 # ===== 备份：永久图文素材（material/news） =====
-def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
+def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
@@ -166,6 +175,10 @@ def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Pa
             media_id = it.get("media_id", "news")
             content = it.get("content", {})
             ts = int(time.time())
+            if start_ts is not None and ts < start_ts:
+                continue
+            if end_ts is not None and ts > end_ts:
+                continue
             for i, n in enumerate(content.get("news_item", []), start=1):
                 title = n.get("title", "")
                 url   = n.get("url", "")
@@ -182,6 +195,8 @@ def main():
     parser.add_argument("--secret", help="WeChat AppSecret")
     parser.add_argument("--account-name", default="文不加点的张衔瑜", help="WeChat Official Account name")
     parser.add_argument("--year", type=int, default=datetime.now().year, help="Year to backup (for content directory)")
+    parser.add_argument("--from-date", dest="from_date", help="Filter start date (YYYY or YYYY-MM or YYYY-MM-DD)")
+    parser.add_argument("--to-date", dest="to_date", help="Filter end date (YYYY or YYYY-MM or YYYY-MM-DD)")
     args = parser.parse_args()
 
     # 读取 .env（如存在）
@@ -204,10 +219,50 @@ def main():
     global SESSION
     SESSION = create_retry_session()
 
+    # 解析时间区间
+    def parse_start(s: str | None) -> int | None:
+        if not s:
+            return None
+        s = s.strip()
+        try:
+            if re.fullmatch(r"\d{4}", s):
+                dt = datetime(int(s), 1, 1, 0, 0, 0)
+            elif re.fullmatch(r"\d{4}-\d{2}", s):
+                y, m = map(int, s.split("-"))
+                dt = datetime(y, m, 1, 0, 0, 0)
+            else:
+                dt = datetime.fromisoformat(s)
+            return int(dt.timestamp())
+        except Exception:
+            raise SystemExit(f"--from-date 无法解析: {s}")
+
+    def parse_end(s: str | None) -> int | None:
+        if not s:
+            return None
+        s = s.strip()
+        try:
+            if re.fullmatch(r"\d{4}", s):
+                y = int(s)
+                dt = datetime(y, 12, 31, 23, 59, 59)
+            elif re.fullmatch(r"\d{4}-\d{2}", s):
+                y, m = map(int, s.split("-"))
+                last_day = calendar.monthrange(y, m)[1]
+                dt = datetime(y, m, last_day, 23, 59, 59)
+            else:
+                # YYYY-MM-DD -> end of day
+                base = datetime.fromisoformat(s)
+                dt = datetime(base.year, base.month, base.day, 23, 59, 59)
+            return int(dt.timestamp())
+        except Exception:
+            raise SystemExit(f"--to-date 无法解析: {s}")
+
+    start_ts = parse_start(args.from_date)
+    end_ts = parse_end(args.to_date)
+
     token = get_access_token(appid, secret)
-    backup_published(token, out_dir, img_root)
-    # backup_drafts(token, out_dir, img_root) # 如需同步草稿/素材，取消注释
-    # backup_material_news(token, out_dir, img_root)
+    backup_published(token, out_dir, img_root, start_ts, end_ts)
+    # backup_drafts(token, out_dir, img_root, start_ts, end_ts) # 如需同步草稿/素材，取消注释
+    # backup_material_news(token, out_dir, img_root, start_ts, end_ts)
 
 if __name__ == "__main__":
     main()
