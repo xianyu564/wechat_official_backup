@@ -131,6 +131,8 @@ python scripts/backup_wechat.py
   - **禁止演绎**：未经书面许可，不得改编、再创作或制作衍生作品。
   - 第三方商标或材料可能受其各自许可约束，本文档不授予相应权利。
   - 代码许可证文件为 `LICENSE`（仅限代码，MIT），内容许可为 `CONTENT-LICENSE`（非代码内容，CC BY-NC-ND 4.0）。
+  - **未尽事宜/纠纷**：本人保留依法追究相关责任的全部权利。
+  - **善意交流**：欢迎 any good-will 的讨论与合作，可通过 Issues 发起联系。
 
 ### 致谢 / Acknowledgements
 * GitHub Actions 与 Pages
