@@ -214,7 +214,7 @@ def main():
     secret = args.secret or os.getenv("WECHAT_APPSECRET")
     account_name = args.account_name or os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
     if not appid or not secret:
-        raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试")
+        raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试\nWECHAT_APPID/WECHAT_APPSECRET not configured. Please set via --appid/--secret or .env file and try again.")
 
     # 根据命令行参数动态确定目录
     out_dir = ROOT / "content" / "wechat" / account_name
