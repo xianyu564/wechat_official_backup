@@ -5,7 +5,8 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write   # 仅授予提交权限
+  contents: write         # 推送提交
+  pull-requests: write    # 创建/更新 PR 需要该权限
 
 jobs:
   backup:
@@ -35,19 +36,22 @@ jobs:
             --account-name "文不加点的张衔瑜"
 
       - name: Commit & Push
+        id: commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           if git diff --cached --quiet; then
             echo "No changes to commit."
+            echo "changed=false" >> $GITHUB_OUTPUT
           else
             git commit -m "chore: sync wechat articles"
             git push -u origin "$BRANCH"
+            echo "changed=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Open Pull Request
-        if: success()
+        if: steps.commit.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
