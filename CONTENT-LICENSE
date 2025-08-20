@@ -1,0 +1,22 @@
+Content License / 内容许可
+
+Copyright (c) 2025 张衔瑜
+
+English
+- Scope: All non-code content in this repository, including but not limited to WeChat articles, images/photography, and derived Markdown/PDF stored under `content/`, `assets/`, and related paths (including JSON snapshots that contain article bodies).
+- License: Creative Commons Attribution 4.0 International (CC BY 4.0).
+- You are free to share and redistribute the material in any medium or format, and adapt for any purpose, even commercially, under the following terms:
+  - Attribution: You must give appropriate credit to "《文不加点的张衔瑜》", provide a link to this repository, and indicate if changes were made. Do not imply endorsement.
+- License text: https://creativecommons.org/licenses/by/4.0/
+
+中文
+- 范围：本仓库中的**非代码内容**，包括但不限于公众号文章、图片/摄影作品及其派生的 Markdown/PDF，主要位于 `content/`、`assets/` 等目录（含包含文章正文的 JSON 快照）。
+- 许可：署名-4.0 国际（CC BY 4.0）。
+- 权利与义务：你可以以任何媒介或形式共享、传播、二次创作（含商业用途），但需**署名**：
+  - 标注来源为“《文不加点的张衔瑜》”，附上本仓库链接，并在适当位置说明是否做出修改；不得暗示原作者背书。
+- 许可全文：https://creativecommons.org/licenses/by/4.0/deed.zh-Hans
+
+Notes / 说明
+- Third-party trademarks or materials embedded in articles may be subject to their own licenses; such items are not licensed hereby.
+- This file does not apply to software code. For code license, see LICENSE (MIT).
+

@@ -94,3 +94,13 @@ For ongoing backups, it is recommended to create a new feature branch for each b
   - 审查后，此分支将合并回 `master`。
 
 This approach ensures that changes are isolated, easily reviewable, and keeps the `master` branch clean and reliable.
+
+## 6. Licensing / 许可
+
+English
+- Code: MIT (see `LICENSE`). Free to use, modify, and redistribute with notices preserved.
+- Non-code content (WeChat articles, images/photography, derived Markdown/PDF, snapshots): CC BY 4.0 (see `CONTENT-LICENSE`). Reuse is welcome with proper attribution to "《文不加点的张衔瑜》".
+
+中文
+- 代码：MIT（见 `LICENSE`）。可自由使用、修改与再发布，需保留版权与许可声明。
+- 非代码内容（公众号文章、图片/摄影、派生 Markdown/PDF、快照）：CC BY 4.0（见 `CONTENT-LICENSE`）。欢迎引用与再利用，但需注明来源“《文不加点的张衔瑜》”。

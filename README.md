@@ -125,9 +125,9 @@ python scripts/backup_wechat.py
 
 - **代码**：采用 MIT 许可证。
 - **内容（公众号文章及派生 Markdown/PDF/图片）**：
-  - 默认保留所有权利。
-  - 若未来有开放计划，将另行声明（例如 CC BY-NC-ND 4.0）。
-  - 代码许可证文件为 `LICENSE`，内容许可文件（若有）为 `CONTENT-LICENSE`。
+  - 采用 CC BY 4.0（署名）。欢迎引用与再利用，但需**明确署名**“《文不加点的张衔瑜》”并附仓库链接；不得暗示背书。
+  - 第三方商标或材料可能受其各自许可约束，本文档不授予相应权利。
+  - 代码许可证文件为 `LICENSE`（仅限代码，MIT），内容许可为 `CONTENT-LICENSE`（非代码内容，CC BY 4.0）。
 
 ### 致谢 / Acknowledgements
 * GitHub Actions 与 Pages
