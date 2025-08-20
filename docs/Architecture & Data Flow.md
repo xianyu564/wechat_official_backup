@@ -99,8 +99,8 @@ This approach ensures that changes are isolated, easily reviewable, and keeps th
 
 English
 - Code: MIT (see `LICENSE`). Free to use, modify, and redistribute with notices preserved.
-- Non-code content (WeChat articles, images/photography, derived Markdown/PDF, snapshots): CC BY 4.0 (see `CONTENT-LICENSE`). Reuse is welcome with proper attribution to "《文不加点的张衔瑜》".
+- Non-code content (WeChat articles, images/photography, derived Markdown/PDF, snapshots): CC BY-NC-ND 4.0 (see `CONTENT-LICENSE`). Personal viewing/research allowed with attribution; any commercial/publication use requires prior written authorization.
 
 中文
 - 代码：MIT（见 `LICENSE`）。可自由使用、修改与再发布，需保留版权与许可声明。
-- 非代码内容（公众号文章、图片/摄影、派生 Markdown/PDF、快照）：CC BY 4.0（见 `CONTENT-LICENSE`）。欢迎引用与再利用，但需注明来源“《文不加点的张衔瑜》”。
+- 非代码内容（公众号文章、图片/摄影、派生 Markdown/PDF、快照）：CC BY-NC-ND 4.0（见 `CONTENT-LICENSE`）。个人浏览或研究用途在署名前提下允许；**任何商业或出版使用须事先书面授权**。
