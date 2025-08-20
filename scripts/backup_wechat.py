@@ -1,74 +1,162 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-import argparse
-import json
-import os
+# scripts/backup_wechat.py
+import os, re, json, time, pathlib, hashlib, requests
 from datetime import datetime
-from pathlib import Path
+from urllib.parse import urlparse
+from bs4 import BeautifulSoup           # pip install beautifulsoup4
+import html2text                        # pip install html2text
 
+APPID  = os.environ["WECHAT_APPID"]
+SECRET = os.environ["WECHAT_APPSECRET"]
+ACCOUNT_NAME = os.getenv("WECHAT_ACCOUNT_NAME", "文不加点的张衔瑜")
 
-def ensure_directory(path: Path) -> None:
-    path.mkdir(parents=True, exist_ok=True)
+ROOT    = pathlib.Path(__file__).resolve().parents[1]
+OUT_DIR = ROOT / "content" / "wechat" / ACCOUNT_NAME
+IMG_DIR = ROOT / "assets" / "wechat"
+SNAP    = ROOT / "data" / "snapshots"
+for p in (OUT_DIR, IMG_DIR, SNAP): p.mkdir(parents=True, exist_ok=True)
 
+def get_access_token():
+    url = ("https://api.weixin.qq.com/cgi-bin/token"
+           f"?grant_type=client_credential&appid={APPID}&secret={SECRET}")
+    r = requests.get(url, timeout=15)
+    r.raise_for_status()
+    js = r.json()
+    if "access_token" not in js:
+        raise RuntimeError(f"get token failed: {js}")
+    return js["access_token"], js["expires_in"]
 
-def save_json(data: dict, file_path: Path) -> None:
-    ensure_directory(file_path.parent)
-    with file_path.open("w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+def wechat_post(api, payload):
+    token, _ = get_access_token()
+    url = f"https://api.weixin.qq.com/cgi-bin/{api}?access_token={token}"
+    r = requests.post(url, json=payload, timeout=30)
+    r.raise_for_status()
+    js = r.json()
+    if js.get("errcode", 0) != 0 and "item" not in js:
+        # 兼容 count 接口等无 errcode=0 也返回正常字段的情况
+        raise RuntimeError(f"WX API error: {api} -> {js}")
+    return js
 
+def slug(s):
+    s = re.sub(r"\s+", "-", re.sub(r"[^\w\u4e00-\u9fa5\- ]+", "", s.strip()))
+    return re.sub(r"-{2,}", "-", s)[:80]
 
-def save_markdown(content: str, file_path: Path) -> None:
-    ensure_directory(file_path.parent)
-    with file_path.open("w", encoding="utf-8") as f:
-        f.write(content)
+def html_to_md_and_save_images(article_id, html, ts):
+    # 先把 <img> 本地化，再转 md，避免链接丢失
+    soup = BeautifulSoup(html, "html.parser")
+    img_dir = IMG_DIR / datetime.fromtimestamp(ts).strftime("%Y") / article_id
+    img_dir.mkdir(parents=True, exist_ok=True)
+    for img in soup.find_all("img"):
+        src = img.get("data-src") or img.get("src")
+        if not src: 
+            continue
+        try:
+            fn = hashlib.md5(src.encode("utf-8")).hexdigest()[:12]
+            ext = pathlib.Path(urlparse(src).path).suffix or ".jpg"
+            local = img_dir / f"{fn}{ext}"
+            if not local.exists():
+                rr = requests.get(src, timeout=30)
+                rr.raise_for_status()
+                local.write_bytes(rr.content)
+            # 改写为相对路径，便于 GitHub Pages
+            rel = os.path.relpath(local, ROOT)
+            img["src"] = "/" + rel.replace("\\", "/")
+            # wechat 常见 data-src
+            if img.has_attr("data-src"):
+                img["data-src"] = img["src"]
+        except Exception:
+            continue
+    html = str(soup)
+    # 转 Markdown
+    h = html2text.HTML2Text()
+    h.ignore_links = False
+    h.ignore_images = False
+    md = h.handle(html)
+    return md
 
-
-def simulate_fetch_articles(account: str, year: int) -> list[dict]:
-    # 这里先放一个模拟数据结构，后续可接入真实抓取逻辑
-    return [
-        {
-            "title": f"示例文章 - {account}",
-            "date": f"{year}-01-01",
-            "content": f"这是 {account} 在 {year} 年的示例文章内容。",
-            "assets": [],
-        }
+def write_markdown(dirpath, title, url, ts, article_id, idx, md):
+    dirpath.mkdir(parents=True, exist_ok=True)
+    dt = datetime.fromtimestamp(ts)
+    name = f"{dt.strftime('%Y-%m-%d')}_{slug(title)}_{idx}_{article_id}.md"
+    fm = [
+        "---",
+        f'title: "{title.replace(\'"\', "\'")}"',
+        f"date: {dt.isoformat()}",
+        f"source: {url}",
+        f"platform: wechat",
+        f"article_id: {article_id}",
+        "---",
+        ""
     ]
+    (dirpath / name).write_text("\n".join(fm) + md, encoding="utf-8")
 
+def save_snapshot(prefix, obj):
+    ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+    (SNAP / f"{prefix}-{ts}.json").write_text(json.dumps(obj, ensure_ascii=False, indent=2), "utf-8")
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Backup WeChat Official Account articles")
-    parser.add_argument("--account", required=True, help="WeChat Official Account name")
-    parser.add_argument("--year", type=int, default=datetime.now().year, help="Year to backup")
-    args = parser.parse_args()
+def backup_published():
+    all_items = []
+    offset = 0
+    while True:
+        js = wechat_post("freepublish/batchget", {"offset": offset, "count": 20})
+        save_snapshot("published", js)
+        items = js.get("item", [])
+        all_items += items
+        if len(items) < 20: break
+        offset += 20
 
-    repo_root = Path.cwd()
-    project_root = repo_root / "wechat-backup"
+    for it in all_items:
+        article_id = it.get("article_id") or hashlib.md5(json.dumps(it).encode()).hexdigest()[:10]
+        content = it["content"]
+        ts = int(content.get("update_time") or content.get("create_time") or time.time())
+        news = content.get("news_item", [])
+        for i, n in enumerate(news, start=1):
+            title = n.get("title", "untitled")
+            url   = n.get("url", "")
+            html  = n.get("content", "")
+            md = html_to_md_and_save_images(article_id, html, ts)
+            write_markdown(OUT_DIR / datetime.fromtimestamp(ts).strftime("%Y"), title, url, ts, article_id, i, md)
 
-    # 目录
-    md_dir = project_root / "content" / "wechat" / args.account / str(args.year)
-    assets_dir = project_root / "assets" / "wechat" / str(args.year)
-    snapshots_dir = project_root / "data" / "snapshots"
+def backup_drafts():
+    # 可选：拉草稿箱全文（不需要的话可注释）
+    offset = 0
+    while True:
+        js = wechat_post("draft/batchget", {"offset": offset, "count": 20, "no_content": 0})
+        save_snapshot("drafts", js)
+        items = js.get("item", [])
+        for it in items:
+            media_id = it.get("media_id", "draft")
+            content = it.get("content", {})
+            ts = int(content.get("update_time") or content.get("create_time") or time.time())
+            for i, n in enumerate(content.get("news_item", []), start=1):
+                title = n.get("title", "untitled")
+                url   = n.get("url", "")
+                html  = n.get("content", "")
+                md = html_to_md_and_save_images(media_id, html, ts)
+                write_markdown(OUT_DIR / "drafts" / datetime.fromtimestamp(ts).strftime("%Y"), title, url, ts, media_id, i, md)
+        if len(items) < 20: break
+        offset += 20
 
-    ensure_directory(md_dir)
-    ensure_directory(assets_dir)
-    ensure_directory(snapshots_dir)
-
-    articles = simulate_fetch_articles(args.account, args.year)
-    snapshot_file = snapshots_dir / f"{args.account}_{args.year}.json"
-    save_json({"account": args.account, "year": args.year, "articles": articles}, snapshot_file)
-
-    for idx, article in enumerate(articles, start=1):
-        slug = f"{article['date'].replace('-', '')}-{idx:02d}"
-        md_path = md_dir / f"{slug}.md"
-        md = f"# {article['title']}\n\n{article['content']}\n"
-        save_markdown(md, md_path)
-
-    print(f"Saved {len(articles)} article(s) to {md_dir}")
-    print(f"Snapshot saved to {snapshot_file}")
-
+def backup_material_news():
+    # 可选：旧图文永久素材
+    offset = 0
+    while True:
+        js = wechat_post("material/batchget_material", {"type": "news", "offset": offset, "count": 20})
+        save_snapshot("materials", js)
+        items = js.get("item", [])
+        for it in items:
+            media_id = it.get("media_id", "news")
+            content = it.get("content", {})
+            for i, n in enumerate(content.get("news_item", []), start=1):
+                title = n.get("title", "untitled")
+                url   = n.get("url", "")
+                html  = n.get("content", "")
+                ts = int(time.time())
+                md = html_to_md_and_save_images(media_id, html, ts)
+                write_markdown(OUT_DIR / "material", title, url, ts, media_id, i, md)
+        if len(items) < 20: break
+        offset += 20
 
 if __name__ == "__main__":
-    main()
-
-
+    backup_published()       # 已发布（推荐）
+    # backup_drafts()        # 可选
+    # backup_material_news() # 可选
