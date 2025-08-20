@@ -77,9 +77,10 @@ def write_markdown(dirpath, title, url, ts, article_id, idx, md):
     dirpath.mkdir(parents=True, exist_ok=True)
     dt = datetime.fromtimestamp(ts)
     name = f"{dt.strftime('%Y-%m-%d')}_{slug(title)}_{idx}_{article_id}.md"
+    sanitized_title = title.replace('"', "'")
     fm = [
         "---",
-        f'title: "{title.replace(\'"\', "\'")}"',
+        f'title: "{sanitized_title}"',
         f"date: {dt.isoformat()}",
         f"source: {url}",
         f"platform: wechat",
