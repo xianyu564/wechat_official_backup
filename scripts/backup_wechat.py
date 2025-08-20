@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os, re, json, time, pathlib, hashlib, requests
-import calendar
+
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime
@@ -237,6 +237,7 @@ def main():
             raise SystemExit(f"--from-date 无法解析: {s}")
 
     def parse_end(s: str | None) -> int | None:
+        import calendar
         if not s:
             return None
         s = s.strip()
