@@ -18,7 +18,7 @@ scripts/
   backup_wechat.py                    # 主脚本（发布/草稿/素材 → MD）
   utils_html.py                       # HTML → Markdown & 图片本地化
 requirements.txt
-.github/workflows/wechat-backup.yml   # CI：定时与 PR 自动化
+.github/workflows.disabled/wechat-backup.yml   # CI 模板（已禁用）
 ```
 
 ### 凭据配置（本地）
@@ -46,19 +46,31 @@ python scripts/backup_wechat.py --appid <你的APPID> --secret <你的APPSECRET>
 python scripts/backup_wechat.py
 ```
 
-### CI/PR 流程
-- 触发方式：
-  - 手动触发（Actions → Run workflow）
-  - 每周二 15:00（北京时间，UTC 07:00）自动运行
-- 运行步骤：
-  1) 从 `master` 新建特性分支 `backup/run-YYYYMMDD-HHMMSS`
-  2) 执行备份脚本，产生的 `content/`、`assets/`、`data/snapshots/` 变更会被提交并推送
-  3) 自动向 `master` 发起 PR，便于人工审阅与合并
+### CI 说明（已禁用）
+- 仓库默认关闭 CI；若需要启用：
+  1) 将 `.github/workflows.disabled/wechat-backup.yml` 移动到 `.github/workflows/`
+  2) 在仓库 Secrets 配置 `WECHAT_APPID`、`WECHAT_APPSECRET`
+  3) 如需定时运行，自行恢复 `on.schedule` 配置
+  4) 默认会从 `master` 创建特性分支并自动创建 PR
 
 ### GitHub 仓库 Secrets（CI使用）
 - `WECHAT_APPID`
 - `WECHAT_APPSECRET`
 （若仅在本地使用，可不在 Secrets 中配置）
+
+### 本地备份分支策略（建议）
+- 每次备份固定一个时间段（例如 2024-01 ~ 2024-06），从 `master` 新建特性分支，命名示例：
+  - `backup/2024H1`
+  - `backup/2024Q3`
+  - `backup/2025-01-01_to_2025-03-31`
+- 在该分支运行脚本、生成内容后：
+  - 自查差异，提交并推送
+  - 发起 PR 合并到 `master`，便于审阅
+
+### Fork 使用建议（公开仓库）
+- 仅代码（不含我的文章备份）：fork 后只保留 `master` 或仅保留 `scripts/`、`requirements.txt`，并清空 `content/`、`assets/`、`data/snapshots/`
+- 仅备份内容（不含代码）：fork 后删除 `scripts/` 与 CI，仅同步 `content/`、`assets/`、`data/snapshots/`
+- 全量：保留所有分支与目录结构
 
 ### 备注
 - 该仓库仅备份我本人公众号内容；请确保你拥有备份目标账号的合法权限。
