@@ -245,7 +245,7 @@ def main():
         except Exception:
             raise SystemExit(f"--from-date 无法解析: {s}")
 
-    def parse_end(s: str | None) -> int | None:
+    def parse_end(s: Optional[str]) -> Optional[int]:
         import calendar
         if not s:
             return None
