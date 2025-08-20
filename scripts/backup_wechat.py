@@ -261,7 +261,7 @@ def main():
 
     token = get_access_token(appid, secret)
     backup_published(token, out_dir, img_root, start_ts, end_ts)
-    # backup_drafts(token, out_dir, img_root, start_ts, end_ts) # 如需同步草稿/素材，取消注释
+    # backup_drafts(token, out_dir, img_root, start_ts, end_ts) # 如需同步草稿/素材，取消注释 # Uncomment to sync drafts/materials
     # backup_material_news(token, out_dir, img_root, start_ts, end_ts)
 
 if __name__ == "__main__":
