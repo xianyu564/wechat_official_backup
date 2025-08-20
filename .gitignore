@@ -20,6 +20,9 @@ Thumbs.db
 
 # Local env & secrets
 .env
+env.json
+env.local.json
+env.*.local.json
 *.local
 .env.*.local
 

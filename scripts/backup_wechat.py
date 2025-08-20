@@ -11,7 +11,6 @@ except ModuleNotFoundError:
     sys.path.append(str(pathlib.Path(__file__).resolve().parent))
     from utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
-from dotenv import load_dotenv
 from typing import Optional # 修复：新增导入 Optional
 
 # ===== 移除环境变量定义，改为通过参数传递 =====
@@ -218,19 +217,25 @@ def main():
     parser.add_argument("--to-date", dest="to_date", help="Filter end date (YYYY or YYYY-MM or YYYY-MM-DD)")
     args = parser.parse_args()
 
-    # 读取 .env（如存在）—显式从仓库根目录加载，并兼容多种键名
-    load_dotenv(dotenv_path=ROOT / ".env", override=False)
+    # 配置来源：优先命令行参数，其次读取仓库根目录的 env.json（不再使用 .env 文件）
+    config_path = ROOT / "env.json"
+    config: dict = {}
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            raise SystemExit(f"Failed to parse env.json: {e}")
 
-    def first_env(*keys: str) -> Optional[str]:
+    def first_from_config(keys: list[str]) -> Optional[str]:
         for key in keys:
-            val = os.getenv(key)
+            val = config.get(key)
             if val:
                 return val
         return None
 
-    appid = args.appid or first_env("WECHAT_APPID", "APPID", "WECHAT_APP_ID", "APP_ID")
-    secret = args.secret or first_env("WECHAT_APPSECRET", "APPSECRET", "APP_SECRET", "AppSecret", "WECHAT_APP_SECRET")
-    account_name = args.account_name or first_env("WECHAT_ACCOUNT_NAME", "ACCOUNT_NAME", "WECHAT_NAME") or "文不加点的张衔瑜"
+    appid = args.appid or first_from_config(["WECHAT_APPID", "APPID", "WECHAT_APP_ID", "APP_ID"])
+    secret = args.secret or first_from_config(["WECHAT_APPSECRET", "APPSECRET", "APP_SECRET", "AppSecret", "WECHAT_APP_SECRET"])
+    account_name = args.account_name or first_from_config(["WECHAT_ACCOUNT_NAME", "ACCOUNT_NAME", "WECHAT_NAME"]) or "文不加点的张衔瑜"
     if not appid or not secret:
         raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试\nWECHAT_APPID/WECHAT_APPSECRET not configured. Please set via --appid/--secret or .env file and try again.")
 
