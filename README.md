@@ -53,6 +53,15 @@ python scripts/backup_wechat.py
   3) 如需定时运行，自行恢复 `on.schedule` 配置
   4) 默认会从 `master` 创建特性分支并自动创建 PR
 
+  ### CI/PR 流程（已禁用，可自行配置）
+- 触发方式：
+  - 手动触发（Actions → Run workflow）
+  - 每周二 15:00（北京时间，UTC 07:00）自动运行
+- 运行步骤：
+  1) 从 `master` 新建特性分支 `backup/run-YYYYMMDD-HHMMSS`
+  2) 执行备份脚本，产生的 `content/`、`assets/`、`data/snapshots/` 变更会被提交并推送
+  3) 自动向 `master` 发起 PR，便于人工审阅与合并
+
 ### GitHub 仓库 Secrets（CI使用）
 - `WECHAT_APPID`
 - `WECHAT_APPSECRET`
