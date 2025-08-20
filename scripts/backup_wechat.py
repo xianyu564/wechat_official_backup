@@ -218,25 +218,19 @@ def main():
     parser.add_argument("--to-date", dest="to_date", help="Filter end date (YYYY or YYYY-MM or YYYY-MM-DD)")
     args = parser.parse_args()
 
-    # 读取 .env（如存在）——固定从仓库根目录加载，避免受当前工作目录影响
+    # 读取 .env（如存在）—显式从仓库根目录加载，并兼容多种键名
     load_dotenv(dotenv_path=ROOT / ".env", override=False)
-    appid = (
-        args.appid
-        or os.getenv("WECHAT_APPID")
-        or os.getenv("APPID")
-    )
-    secret = (
-        args.secret
-        or os.getenv("WECHAT_APPSECRET")
-        or os.getenv("AppSecret")
-        or os.getenv("APPSECRET")
-    )
-    account_name = (
-        args.account_name
-        or os.getenv("WECHAT_ACCOUNT_NAME")
-        or os.getenv("ACCOUNT_NAME")
-        or "文不加点的张衔瑜"
-    )
+
+    def first_env(*keys: str) -> Optional[str]:
+        for key in keys:
+            val = os.getenv(key)
+            if val:
+                return val
+        return None
+
+    appid = args.appid or first_env("WECHAT_APPID", "APPID", "WECHAT_APP_ID", "APP_ID")
+    secret = args.secret or first_env("WECHAT_APPSECRET", "APPSECRET", "APP_SECRET", "AppSecret", "WECHAT_APP_SECRET")
+    account_name = args.account_name or first_env("WECHAT_ACCOUNT_NAME", "ACCOUNT_NAME", "WECHAT_NAME") or "文不加点的张衔瑜"
     if not appid or not secret:
         raise SystemExit("WECHAT_APPID/WECHAT_APPSECRET 未配置：请通过 --appid/--secret 或 .env 设置后重试\nWECHAT_APPID/WECHAT_APPSECRET not configured. Please set via --appid/--secret or .env file and try again.")
 
