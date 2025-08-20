@@ -218,8 +218,8 @@ def main():
     parser.add_argument("--to-date", dest="to_date", help="Filter end date (YYYY or YYYY-MM or YYYY-MM-DD)")
     args = parser.parse_args()
 
-    # 读取 .env（如存在）
-    load_dotenv(override=False)
+    # 读取 .env（如存在）——固定从仓库根目录加载，避免受当前工作目录影响
+    load_dotenv(dotenv_path=ROOT / ".env", override=False)
     appid = (
         args.appid
         or os.getenv("WECHAT_APPID")
