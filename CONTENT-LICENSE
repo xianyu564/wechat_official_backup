@@ -1,0 +1,28 @@
+Content License / 内容许可（非代码内容）
+
+Copyright (c) 2025 张衔瑜
+
+English
+- Scope: All non-code content in this repository, including (but not limited to) WeChat articles, images/photography, and derived Markdown/PDF stored under `content/`, `assets/`, and related paths (including JSON snapshots that contain article bodies).
+- License: Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International (CC BY-NC-ND 4.0).
+- Permissions:
+  - Personal viewing and research use are allowed with proper attribution to "《文不加点的张衔瑜》" and a link to this repository.
+  - Any commercial reuse (including corporate WeChat OA, monetized media, paid publications, or other profit-oriented contexts) or publication/distribution in any form requires prior written authorization from the account owner.
+  - No derivatives: Do not remix, transform, or build upon the material without written permission.
+- License text: https://creativecommons.org/licenses/by-nc-nd/4.0/
+
+中文
+- 范围：本仓库中的**非代码内容**，包括但不限于公众号文章、图片/摄影作品及其派生的 Markdown/PDF，主要位于 `content/`、`assets/` 等目录（含包含文章正文的 JSON 快照）。
+- 许可：署名-非商业性使用-禁止演绎 4.0 国际（CC BY-NC-ND 4.0）。
+- 权限与限制：
+  - **个人浏览或研究用途**在**注明来源**（“《文不加点的张衔瑜》”与本仓库链接）的前提下允许使用。
+  - **任何商业性复用或出版/发行**（包括企业主体公众号、公开盈利性刊物、付费平台等）均须**事先获得公众号主体的书面授权**。
+  - **禁止演绎**：未经书面许可，不得对内容进行再创作、改编、汇编或以其它方式制作衍生作品。
+- 许可全文：https://creativecommons.org/licenses/by-nc-nd/4.0/deed.zh-Hans
+
+Notes / 说明
+- 第三方商标或材料可能受其各自许可约束；此处不授予该等素材的权利。
+- 本文件**不适用于软件代码**；代码许可请见 `LICENSE`（MIT）。
+ - **未尽事宜或发生纠纷之情形**：本人（《文不加点的张衔瑜》公众号主体）保留依法追究相关责任之全部权利。
+ - **善意沟通**：欢迎基于善意（good-will）的交流与合作；请优先通过本仓库 Issues 发起联系。
+
