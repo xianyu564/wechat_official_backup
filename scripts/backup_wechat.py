@@ -36,7 +36,17 @@ def http_get_json(url: str):
 def http_post_json(url: str, payload: dict):
     global SESSION
     client = SESSION or requests
-    r = client.post(url, json=payload, timeout=30)
+    if SESSION is None:
+        raise RuntimeError("SESSION is not initialized. Please initialize SESSION before making HTTP requests.")
+    r = SESSION.get(url, timeout=20)
+    r.raise_for_status()
+    return r.json()
+
+def http_post_json(url: str, payload: dict):
+    global SESSION
+    if SESSION is None:
+        raise RuntimeError("SESSION is not initialized. Please initialize SESSION before making HTTP requests.")
+    r = SESSION.post(url, json=payload, timeout=30)
     r.raise_for_status()
     return r.json()
 
@@ -173,7 +183,7 @@ def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Pa
         for it in items:
             media_id = it.get("media_id", "news")
             content = it.get("content", {})
-            ts = int(time.time())
+            ts = int(content.get("update_time") or content.get("create_time") or time.time())
             if start_ts is not None and ts < start_ts:
                 continue
             if end_ts is not None and ts > end_ts:
