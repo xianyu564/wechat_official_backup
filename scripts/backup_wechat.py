@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os, re, json, time, pathlib, hashlib, requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 from datetime import datetime
 from scripts.utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
@@ -18,17 +20,22 @@ SNAP     = ROOT / "data" / "snapshots"
 for p in (SNAP, ): p.mkdir(parents=True, exist_ok=True) # 仅 SNAP 目录需要预先创建
 
 # ===== 基础工具 =====
+SESSION = None  # 在 main 中初始化具备重试的会话
 def slug(s: str) -> str:
     s = re.sub(r"[^\w\u4e00-\u9fa5\- ]+", "", (s or "").strip()).replace(" ", "-")
     return re.sub(r"-{2,}", "-", s)[:80] or "untitled"
 
 def http_get_json(url: str):
-    r = requests.get(url, timeout=20)
+    global SESSION
+    client = SESSION or requests
+    r = client.get(url, timeout=20)
     r.raise_for_status()
     return r.json()
 
 def http_post_json(url: str, payload: dict):
-    r = requests.post(url, json=payload, timeout=30)
+    global SESSION
+    client = SESSION or requests
+    r = client.post(url, json=payload, timeout=30)
     r.raise_for_status()
     return r.json()
 
@@ -43,6 +50,20 @@ def get_access_token(appid: str, secret: str) -> str:
     if "access_token" not in js:
         raise RuntimeError(f"get token failed: {js}")
     return js["access_token"]
+
+def create_retry_session() -> requests.Session:
+    session = requests.Session()
+    retries = Retry(
+        total=5,
+        backoff_factor=0.5,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=("GET", "POST"),
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retries)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
 
 def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article_id: str, idx: int, md: str):
     dirpath.mkdir(parents=True, exist_ok=True)
@@ -73,6 +94,7 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
         if len(items) < 20:
             break
         offset += 20
+        time.sleep(0.2)  # 简单限速，避免触发频控
 
     # 遍历每条，写入 Markdown（必要时回退调用 getarticle 拿 content）
     for it in all_items:
@@ -88,6 +110,7 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
             save_snapshot(f"published-getarticle-{article_id}", ga)
             content = ga.get("content", content)
             news = content.get("news_item", news)
+            time.sleep(0.2)
 
         for i, n in enumerate(news, start=1):
             title = n.get("title", "")
@@ -118,6 +141,7 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
                 write_markdown(year_dir, title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
+        time.sleep(0.2)
 
 # ===== 备份：永久图文素材（material/news） =====
 def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path):
@@ -139,6 +163,7 @@ def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Pa
                 write_markdown(out_dir / "material", title, url, ts, media_id, i, md)
         if len(items) < 20: break
         offset += 20
+        time.sleep(0.2)
 
 def main():
     parser = argparse.ArgumentParser(description="Backup WeChat Official Account articles")
@@ -155,6 +180,10 @@ def main():
     # 确保主目录存在
     out_dir.mkdir(parents=True, exist_ok=True)
     img_root.mkdir(parents=True, exist_ok=True)
+
+    # 初始化具备重试能力的 Session
+    global SESSION
+    SESSION = create_retry_session()
 
     token = get_access_token(args.appid, args.secret)
     backup_published(token, out_dir, img_root)

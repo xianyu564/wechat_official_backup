@@ -110,10 +110,10 @@ curl -X POST \
 
 # 六、把返回结果“落地到 GitHub”的提示
 
-你的上一环节已经能拉到数据；要备份到 GitHub，通常做法是：
+你的上一环节已经能拉到数据；我的初衷是将我自己（具备全部权限）的公众号文章进行长期备份到 GitHub，通常做法是：
 
 * **格式化保存**：把 `freepublish`、`draft`、`material` 各自按日期/篇目落成 `JSON/Markdown` 文件；
-* **自动化**：写一个脚本（Python/Node/Go 均可）每日拉取差量并提交到仓库，再用 **GitHub Actions** 定时运行。
+* **自动化**：写一个脚本（Python/Node/Go 均可）按需手动触发，或每周二 15:00（北京时间）由 **GitHub Actions** 定时运行。
 
 ---
 
