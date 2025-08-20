@@ -183,7 +183,7 @@ def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Pa
         for it in items:
             media_id = it.get("media_id", "news")
             content = it.get("content", {})
-            ts = int(time.time())
+            ts = int(content.get("update_time") or content.get("create_time") or time.time())
             if start_ts is not None and ts < start_ts:
                 continue
             if end_ts is not None and ts > end_ts:
