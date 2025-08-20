@@ -96,7 +96,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
         suffix += 1
     fm = [
         "---",
-        f'title: "{(title or "无题").replace("\"", "\'")}"',
+        f'title: "{(title or "无题").replace('"', "'")}"',
         f"date: {dt.isoformat()}",
         f"source: {url or ''}",
         f"platform: wechat",
