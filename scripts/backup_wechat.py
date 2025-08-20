@@ -4,7 +4,12 @@ import os, re, json, time, pathlib, hashlib, requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from datetime import datetime
-from scripts.utils_html import html_to_markdown_with_local_images
+try:
+    from scripts.utils_html import html_to_markdown_with_local_images
+except ModuleNotFoundError:
+    import sys
+    sys.path.append(str(pathlib.Path(__file__).resolve().parent))
+    from utils_html import html_to_markdown_with_local_images
 import argparse # 新增导入 argparse
 from dotenv import load_dotenv
 from typing import Optional # 修复：新增导入 Optional
@@ -108,7 +113,7 @@ def write_markdown(dirpath: pathlib.Path, title: str, url: str, ts: int, article
     (dirpath / candidate).write_text("\n".join(fm) + (md or ""), encoding="utf-8")
 
 # ===== 备份：已发布（freepublish） =====
-def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     all_items = []
     offset = 0
     while True:
@@ -151,7 +156,7 @@ def backup_published(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, 
             write_markdown(year_dir, title, url, ts, article_id, i, md)
 
 # ===== 备份：草稿箱（draft） =====
-def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/draft/batchget?access_token={token}"
@@ -178,7 +183,7 @@ def backup_drafts(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, sta
         time.sleep(0.2)
 
 # ===== 备份：永久图文素材（material/news） =====
-def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: int | None = None, end_ts: int | None = None):
+def backup_material_news(token: str, out_dir: pathlib.Path, img_root: pathlib.Path, start_ts: Optional[int] = None, end_ts: Optional[int] = None):
     offset = 0
     while True:
         url = f"https://api.weixin.qq.com/cgi-bin/material/batchget_material?access_token={token}"
