@@ -229,7 +229,7 @@ def main():
     SESSION = create_retry_session()
 
     # 解析时间区间
-    def parse_start(s: str | None) -> int | None:
+    def parse_start(s: Optional[str]) -> Optional[int]:
         if not s:
             return None
         s = s.strip()
