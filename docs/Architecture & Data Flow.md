@@ -4,6 +4,10 @@
 
 This repository provides a Python-based solution for backing up WeChat Official Account (OA) articles. The process involves fetching article data from WeChat's Open Platform APIs, transforming HTML content to Markdown, localizing images, and structuring the output for easy archival on GitHub.
 
+About the OA / 关于公众号
+- The OA is non-profit and personal in nature. It collects essays, images/photography, and layout explorations across mixed topics: life logs, travel notes, creative sparks, and occasional social commentary.
+- 该公众号**不以盈利为目的**，以个人随笔为主，内容涵盖文字、图像/摄影、版式尝试，题材多元：生活记录、旅行随笔、灵感与社会观察等。
+
 ## 2. Data Sources
 
 - **WeChat Official Account API:**

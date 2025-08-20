@@ -8,6 +8,10 @@
 This repository backs up my own WeChat Official Account “文不加点的张衔瑜” to GitHub.
 It aims to preserve published words with care and clarity, and to make change history reviewable.
 
+说明 / About the OA
+- 这是一个**不以盈利为目的**的个人随笔公众号，内容包含文字、图像、摄影与版式设计等，题材混杂：个人生活记录、旅行随笔、灵感/奇思妙想，以及若干社会观察与评论，整体是一个“杂而雅”的合集。
+- It is a non-profit, personal essay-style OA featuring texts, images/photography, layout experiments, and mixed topics: life logs, travel notes, sparks of ideas, and occasional social commentary — a curated, eclectic anthology.
+
 ## 功能 / Features
 - ✅ 官方接口拉取：发布列表（freepublish）、草稿箱（draft）、永久图文素材（material/news）  
 - ✅ HTML→Markdown 转换，图片**本地化**，避免外链失效  
@@ -138,3 +142,4 @@ python scripts/backup_wechat.py
 * GitHub Actions 与 Pages
 * 官方微信公众号接口
 * `BeautifulSoup` & `html2text` & `requests` & `python-dotenv`
+* 在《文不加点的张衔瑜》个人微信公众号写作过程中提供帮助的人
