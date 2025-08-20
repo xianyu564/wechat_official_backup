@@ -1,7 +1,29 @@
 ﻿# WeChat OA Backup to GitHub · 文不加点的张衔瑜
 
-> 张衔瑜：
-> 把公众号散落的，都收集。
+> 这份代码从零开始大概也就开发了四五个小时吧，还有点难过。本来打算做点词频统计什么的来玩一玩，我也对自己过去写的乱七八糟的东西进行一下统计。结果，噗，微信官方搞不成器了。
+> 可能后面也会想点什么爬虫之类的办法，但总之没有能合规地从自己账号拿出来的这么有意思。本来也就只是自己左手拿酒杯倒腾到右手的事情。
+
+
+> // 张衔瑜：
+> // 把公众号散落的，都收集。
+
+> **重要提示（发布能力 / freepublish）**
+>
+> 服务号可以通过服务端接口，使用发布相关能力，接口如下：
+>
+> 接口名称 | 英文名 | 请求路径
+> --- | --- | ---
+> 获取已发布的消息列表 | freepublish_batchget | /cgi-bin/freepublish/batchget
+> 删除发布文章 | freepublishDelete | /cgi-bin/freepublish/delete
+> 发布状态查询 | freepublish_get | /cgi-bin/freepublish/get
+> 获取已发布图文信息 | freepublishGetarticle | /cgi-bin/freepublish/getarticle
+> 发布草稿 | freepublish_submit | /cgi-bin/freepublish/submit
+>
+> 注：自 2025 年 7 月起，个人主体账号、企业主体未认证账号及不支持认证的账号将被回收以上接口的调用权限。
+>
+> 因此，个人主体账号将**无法**通过**真的是无法**微信官方接口获取“已发布图文”的数据。
+> 本仓库在该场景下的作用主要在于提供合规与能力边界的提示，提醒：在官方权限收紧后，无法通过上述 API 拉取已发布图文。
+
 
 > 重要提示（发布能力 / freepublish）
 >
